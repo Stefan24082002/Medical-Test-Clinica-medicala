@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - MediSchedule</title>
+</head>
+<body>
+
+<h1>Dashboard MediSchedule</h1>
+
+<p>Te-ai autentificat cu succes.</p>
+
+<p>
+    User logat:
+    <strong th:text="${#authentication.name}">username</strong>
+</p>
+
+<p>
+    Roluri:
+    <span th:text="${#authentication.authorities}">roles</span>
+</p>
+
+<form th:action="@{/logout}" method="post">
+    <button type="submit">Logout</button>
+</form>
+<p>
+    <a th:href="@{/admin/departments}">Gestionează departamente</a>
+	
+</p>
+<p>
+    <a th:href="@{/admin/doctors}">Gestionează doctori</a>
+</p>
+<p>
+    <a th:href="@{/admin/patients}">Gestionează pacienți</a>
+</p>
+<p>
+    <a th:href="@{/admin/treatments}">Gestionează tratamente</a>
+</p>
+<p>
+    <a th:href="@{/admin/appointments}">Gestionează programări</a>
+</p>
+<p>
+    <a th:href="@{/admin/medical-records}">Gestionează fișe medicale</a>
+</p>
+</body>
+</html>

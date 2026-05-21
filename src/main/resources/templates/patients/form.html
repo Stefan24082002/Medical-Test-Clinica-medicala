@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${pageTitle}">Pacient</title>
+</head>
+<body>
+
+<h1 th:text="${pageTitle}">Pacient</h1>
+
+<form th:action="${patient.id == null} ? @{/admin/patients} : @{/admin/patients/edit/{id}(id=${patient.id})}"
+      th:object="${patient}"
+      method="post">
+
+    <div>
+        <label>Prenume:</label>
+        <input type="text" th:field="*{firstName}" required minlength="2">
+        <div th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}" style="color:red;"></div>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Nume:</label>
+        <input type="text" th:field="*{lastName}" required minlength="2">
+        <div th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}" style="color:red;"></div>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Data nașterii:</label>
+        <input type="date" th:field="*{birthDate}">
+    </div>
+
+    <br>
+
+    <div>
+        <label>Email:</label>
+        <input type="email" th:field="*{email}">
+        <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}" style="color:red;"></div>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Telefon:</label>
+        <input type="text" th:field="*{phone}" placeholder="0712345678">
+        <div th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}" style="color:red;"></div>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Adresă:</label>
+        <input type="text" th:field="*{address}">
+    </div>
+
+    <br>
+
+    <button type="submit">Salvează</button>
+    <a th:href="@{/admin/patients}">Anulează</a>
+</form>
+
+</body>
+</html>

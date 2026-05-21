@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${pageTitle}">Programare</title>
+</head>
+<body>
+
+<h1 th:text="${pageTitle}">Programare</h1>
+
+<p>
+    <a th:href="@{/dashboard}">Dashboard</a> |
+    <a th:href="@{/admin/appointments}">Înapoi la programări</a>
+</p>
+
+<div th:if="${errorMessage}">
+    <p style="color:red;" th:text="${errorMessage}"></p>
+</div>
+
+<form th:action="${appointment.id == null} ? @{/admin/appointments} : @{/admin/appointments/edit/{id}(id=${appointment.id})}"
+      th:object="${appointment}"
+      method="post">
+
+    <div>
+        <label>Data:</label>
+        <input type="date"
+               name="appointmentDateInput"
+               th:value="${appointmentDateInput}"
+               required>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Ora:</label>
+        <select name="appointmentTimeInput" required>
+            <option value="">-- Alege ora --</option>
+            <option th:each="time : ${timeSlots}"
+                    th:value="${time}"
+                    th:text="${time}"
+                    th:selected="${appointmentTimeInput != null and appointmentTimeInput == time}">
+            </option>
+        </select>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Pacient:</label>
+        <select name="patientId" required>
+            <option value="">-- Alege pacient --</option>
+            <option th:each="patient : ${patients}"
+                    th:value="${patient.id}"
+                    th:text="${patient.firstName + ' ' + patient.lastName}"
+                    th:selected="${appointment.patient != null and appointment.patient.id == patient.id}">
+            </option>
+        </select>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Doctor:</label>
+        <select name="doctorId" required>
+            <option value="">-- Alege doctor --</option>
+            <option th:each="doctor : ${doctors}"
+                    th:value="${doctor.id}"
+                    th:text="${doctor.firstName + ' ' + doctor.lastName + ' - ' + doctor.specialization}"
+                    th:selected="${appointment.doctor != null and appointment.doctor.id == doctor.id}">
+            </option>
+        </select>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Motiv:</label>
+        <textarea th:field="*{reason}" rows="4" cols="40"></textarea>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Status:</label>
+        <select th:field="*{status}">
+            <option th:each="status : ${statuses}"
+                    th:value="${status}"
+                    th:text="${status}">
+            </option>
+        </select>
+    </div>
+
+    <br>
+
+    <button type="submit">Salvează</button>
+    <a th:href="@{/admin/appointments}">Anulează</a>
+</form>
+
+</body>
+</html>

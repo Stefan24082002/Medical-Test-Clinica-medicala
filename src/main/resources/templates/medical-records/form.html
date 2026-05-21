@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${pageTitle}">Fișă medicală</title>
+</head>
+<body>
+
+<h1 th:text="${pageTitle}">Fișă medicală</h1>
+
+<p>
+    <a th:href="@{/dashboard}">Dashboard</a> |
+    <a th:href="@{/admin/medical-records}">Înapoi la fișe medicale</a>
+</p>
+
+<div th:if="${errorMessage}">
+    <p style="color:red;" th:text="${errorMessage}"></p>
+</div>
+
+<form th:action="${medicalRecord.id == null} ? @{/admin/medical-records} : @{/admin/medical-records/edit/{id}(id=${medicalRecord.id})}"
+      th:object="${medicalRecord}"
+      method="post">
+
+    <div>
+        <label>Data fișei:</label>
+        <input type="date" th:field="*{recordDate}" required>
+        <small>Dacă alegi o programare, data se completează automat.</small>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Pacient:</label>
+        <select name="patientId">
+            <option value="">-- Alege pacient --</option>
+            <option th:each="patient : ${patients}"
+                    th:value="${patient.id}"
+                    th:text="${patient.firstName + ' ' + patient.lastName}"
+                    th:selected="${medicalRecord.patient != null and medicalRecord.patient.id == patient.id}">
+            </option>
+        </select>
+        <small>După ce alegi pacientul, apar doar programările lui.</small>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Doctor:</label>
+        <select name="doctorId">
+            <option value="">-- Alege doctor --</option>
+            <option th:each="doctor : ${doctors}"
+                    th:value="${doctor.id}"
+                    th:text="${doctor.firstName + ' ' + doctor.lastName + ' - ' + doctor.specialization}"
+                    th:selected="${medicalRecord.doctor != null and medicalRecord.doctor.id == doctor.id}">
+            </option>
+        </select>
+        <small>Dacă alegi o programare, doctorul se ia automat din programare.</small>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Programare:</label>
+        <select name="appointmentId">
+            <option value="">-- Fără programare --</option>
+            <option th:each="appointment : ${appointments}"
+                    th:value="${appointment.id}"
+                    th:data-date="${appointment.appointmentDate.toLocalDate()}"
+                    th:data-patient-id="${appointment.patient.id}"
+                    th:data-doctor-id="${appointment.doctor.id}"
+                    th:text="${#temporals.format(appointment.appointmentDate, 'yyyy-MM-dd HH:mm') + ' - ' + appointment.patient.firstName + ' ' + appointment.patient.lastName + ' / ' + appointment.doctor.firstName + ' ' + appointment.doctor.lastName}"
+                    th:selected="${medicalRecord.appointment != null and medicalRecord.appointment.id == appointment.id}">
+            </option>
+        </select>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Diagnostic:</label>
+        <textarea th:field="*{diagnosis}" rows="4" cols="50" required></textarea>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Prescripție medicală:</label>
+        <textarea th:field="*{prescription}" rows="4" cols="50"
+                  placeholder="Ex: tratament medicamentos, repaus, regim alimentar, control peste 30 de zile"></textarea>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Observații:</label>
+        <textarea th:field="*{notes}" rows="4" cols="50"
+                  placeholder="Ex: simptome observate, evoluție, recomandări suplimentare"></textarea>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Servicii / proceduri recomandate:</label>
+        <br>
+
+        <div th:each="treatment : ${treatments}">
+            <label>
+                <input type="checkbox"
+                       name="treatmentIds"
+                       th:value="${treatment.id}"
+                       th:checked="${medicalRecord.recommendedTreatments != null and medicalRecord.recommendedTreatments.contains(treatment)}">
+                <span th:text="${treatment.name + ' - ' + treatment.price + ' lei'}">Serviciu medical</span>
+            </label>
+            <br>
+        </div>
+    </div>
+
+    <br>
+
+    <button type="submit">Salvează</button>
+    <a th:href="@{/admin/medical-records}">Anulează</a>
+</form>
+
+<script>
+    const appointmentSelect = document.querySelector('select[name="appointmentId"]');
+    const recordDateInput = document.querySelector('input[name="recordDate"]');
+    const patientSelect = document.querySelector('select[name="patientId"]');
+    const doctorSelect = document.querySelector('select[name="doctorId"]');
+
+    function filterAppointmentsByPatient() {
+        if (!appointmentSelect || !patientSelect) {
+            return;
+        }
+
+        const selectedPatientId = patientSelect.value;
+        const options = appointmentSelect.querySelectorAll('option');
+
+        options.forEach(option => {
+            const optionPatientId = option.getAttribute('data-patient-id');
+
+            if (!option.value) {
+                option.hidden = false;
+                return;
+            }
+
+            if (!selectedPatientId) {
+                option.hidden = false;
+                return;
+            }
+
+            option.hidden = optionPatientId !== selectedPatientId;
+        });
+
+        const selectedOption = appointmentSelect.options[appointmentSelect.selectedIndex];
+
+        if (selectedOption && selectedOption.hidden) {
+            appointmentSelect.value = "";
+        }
+    }
+
+    function fillDataFromAppointment() {
+        if (!appointmentSelect) {
+            return;
+        }
+
+        const selectedOption = appointmentSelect.options[appointmentSelect.selectedIndex];
+
+        const appointmentDate = selectedOption.getAttribute('data-date');
+        const patientId = selectedOption.getAttribute('data-patient-id');
+        const doctorId = selectedOption.getAttribute('data-doctor-id');
+
+        if (appointmentDate && recordDateInput) {
+            recordDateInput.value = appointmentDate;
+        }
+
+        if (patientId && patientSelect) {
+            patientSelect.value = patientId;
+        }
+
+        if (doctorId && doctorSelect) {
+            doctorSelect.value = doctorId;
+        }
+
+        filterAppointmentsByPatient();
+    }
+
+    if (patientSelect) {
+        patientSelect.addEventListener('change', filterAppointmentsByPatient);
+    }
+
+    if (appointmentSelect) {
+        appointmentSelect.addEventListener('change', fillDataFromAppointment);
+    }
+
+    filterAppointmentsByPatient();
+</script>
+
+</body>
+</html>

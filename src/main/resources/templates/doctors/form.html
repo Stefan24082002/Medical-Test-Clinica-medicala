@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${pageTitle}">Doctor</title>
+</head>
+<body>
+
+<h1 th:text="${pageTitle}">Doctor</h1>
+
+<form th:action="${doctor.id == null} ? @{/admin/doctors} : @{/admin/doctors/edit/{id}(id=${doctor.id})}"
+      th:object="${doctor}"
+      method="post">
+
+    <div>
+        <label>Prenume:</label>
+        <input type="text" th:field="*{firstName}" required minlength="2">
+        <div th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}" style="color:red;"></div>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Nume:</label>
+        <input type="text" th:field="*{lastName}" required minlength="2">
+        <div th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}" style="color:red;"></div>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Specializare:</label>
+        <input type="text" th:field="*{specialization}" required minlength="2">
+        <div th:if="${#fields.hasErrors('specialization')}" th:errors="*{specialization}" style="color:red;"></div>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Email:</label>
+        <input type="email" th:field="*{email}">
+        <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}" style="color:red;"></div>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Telefon:</label>
+        <input type="text" th:field="*{phone}" placeholder="0712345678">
+        <div th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}" style="color:red;"></div>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Departament:</label>
+        <select name="departmentId">
+            <option value="">-- Alege departament --</option>
+            <option th:each="department : ${departments}"
+                    th:value="${department.id}"
+                    th:text="${department.name}"
+                    th:selected="${doctor.department != null and doctor.department.id == department.id}">
+            </option>
+        </select>
+    </div>
+
+    <br>
+
+    <button type="submit">Salvează</button>
+    <a th:href="@{/admin/doctors}">Anulează</a>
+</form>
+
+</body>
+</html>

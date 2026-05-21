@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${pageTitle}">Departament</title>
+</head>
+<body>
+
+<h1 th:text="${pageTitle}">Departament</h1>
+
+<form th:action="${department.id == null} ? @{/admin/departments} : @{/admin/departments/edit/{id}(id=${department.id})}"
+      th:object="${department}"
+      method="post">
+
+    <div>
+        <label>Nume departament:</label>
+        <input type="text" th:field="*{name}" required minlength="2">
+        <div th:if="${#fields.hasErrors('name')}" th:errors="*{name}" style="color:red;"></div>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Descriere:</label>
+        <textarea th:field="*{description}" rows="4" cols="40"></textarea>
+        <div th:if="${#fields.hasErrors('description')}" th:errors="*{description}" style="color:red;"></div>
+    </div>
+
+    <br>
+
+    <button type="submit">Salvează</button>
+    <a th:href="@{/admin/departments}">Anulează</a>
+</form>
+
+</body>
+</html>

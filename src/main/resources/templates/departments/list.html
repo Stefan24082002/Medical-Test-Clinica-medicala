@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Departamente</title>
+</head>
+<body>
+
+<h1>Departamente</h1>
+
+<p>
+    <a th:href="@{/dashboard}">Dashboard</a> |
+    <a th:href="@{/admin/departments/new}">Adaugă departament</a>
+</p>
+
+<table border="1" cellpadding="8">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>
+            <a th:href="@{/admin/departments(sortBy='name', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
+                Nume
+            </a>
+        </th>
+        <th>
+            <a th:href="@{/admin/departments(sortBy='description', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
+                Descriere
+            </a>
+        </th>
+        <th>Acțiuni</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    <tr th:each="department : ${departmentPage.content}">
+        <td th:text="${department.id}">1</td>
+        <td th:text="${department.name}">Cardiologie</td>
+        <td th:text="${department.description}">Descriere</td>
+        <td>
+            <a th:href="@{/admin/departments/edit/{id}(id=${department.id})}">Editează</a>
+            |
+            <a th:href="@{/admin/departments/delete/{id}(id=${department.id})}"
+               onclick="return confirm('Sigur vrei să ștergi acest departament?')">
+                Șterge
+            </a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<div th:if="${departmentPage.totalPages > 1}">
+    <p>
+        <a th:if="${currentPage > 0}"
+           th:href="@{/admin/departments(page=${currentPage - 1}, sortBy=${sortBy}, direction=${direction})}">
+            Înapoi
+        </a>
+
+        <span>
+            Pagina <span th:text="${currentPage + 1}"></span>
+            din <span th:text="${departmentPage.totalPages}"></span>
+        </span>
+
+        <a th:if="${currentPage + 1 < departmentPage.totalPages}"
+           th:href="@{/admin/departments(page=${currentPage + 1}, sortBy=${sortBy}, direction=${direction})}">
+            Înainte
+        </a>
+    </p>
+</div>
+
+<form th:action="@{/logout}" method="post">
+    <button type="submit">Logout</button>
+</form>
+
+</body>
+</html>

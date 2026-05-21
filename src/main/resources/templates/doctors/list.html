@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Doctori</title>
+</head>
+<body>
+
+<h1>Doctori</h1>
+
+<p>
+    <a th:href="@{/dashboard}">Dashboard</a> |
+    <a th:href="@{/admin/doctors/new}">Adaugă doctor</a> |
+    <a th:href="@{/admin/departments}">Departamente</a>
+</p>
+
+<table border="1" cellpadding="8">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>
+            <a th:href="@{/admin/doctors(sortBy='lastName', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
+                Nume
+            </a>
+        </th>
+        <th>Prenume</th>
+        <th>
+            <a th:href="@{/admin/doctors(sortBy='specialization', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
+                Specializare
+            </a>
+        </th>
+        <th>Email</th>
+        <th>Telefon</th>
+        <th>Departament</th>
+        <th>Acțiuni</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    <tr th:each="doctor : ${doctorPage.content}">
+        <td th:text="${doctor.id}">1</td>
+        <td th:text="${doctor.lastName}">Popescu</td>
+        <td th:text="${doctor.firstName}">Ion</td>
+        <td th:text="${doctor.specialization}">Cardiolog</td>
+        <td th:text="${doctor.email}">doctor@clinic.com</td>
+        <td th:text="${doctor.phone}">0712345678</td>
+        <td th:text="${doctor.department != null ? doctor.department.name : 'Fără departament'}">
+            Cardiologie
+        </td>
+        <td>
+            <a th:href="@{/admin/doctors/edit/{id}(id=${doctor.id})}">Editează</a>
+            |
+            <a th:href="@{/admin/doctors/delete/{id}(id=${doctor.id})}"
+               onclick="return confirm('Sigur vrei să ștergi acest doctor?')">
+                Șterge
+            </a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<div th:if="${doctorPage.totalPages > 1}">
+    <p>
+        <a th:if="${currentPage > 0}"
+           th:href="@{/admin/doctors(page=${currentPage - 1}, sortBy=${sortBy}, direction=${direction})}">
+            Înapoi
+        </a>
+
+        <span>
+            Pagina <span th:text="${currentPage + 1}"></span>
+            din <span th:text="${doctorPage.totalPages}"></span>
+        </span>
+
+        <a th:if="${currentPage + 1 < doctorPage.totalPages}"
+           th:href="@{/admin/doctors(page=${currentPage + 1}, sortBy=${sortBy}, direction=${direction})}">
+            Înainte
+        </a>
+    </p>
+</div>
+
+<form th:action="@{/logout}" method="post">
+    <button type="submit">Logout</button>
+</form>
+
+</body>
+</html>

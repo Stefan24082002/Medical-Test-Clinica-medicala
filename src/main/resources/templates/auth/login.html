@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - MediSchedule</title>
+</head>
+<body>
+
+<h1>Autentificare</h1>
+
+<div th:if="${param.error}">
+    <p style="color: red;">Username sau parolă incorectă.</p>
+</div>
+
+<div th:if="${param.logout}">
+    <p style="color: green;">Te-ai delogat cu succes.</p>
+</div>
+
+<form th:action="@{/login}" method="post">
+    <div>
+        <label>Username:</label>
+        <input type="text" name="username" required>
+    </div>
+
+    <div>
+        <label>Parolă:</label>
+        <input type="password" name="password" required>
+    </div>
+
+    <div>
+        <label>
+            <input type="checkbox" name="remember-me">
+            Ține-mă minte
+        </label>
+    </div>
+
+    <button type="submit">Login</button>
+</form>
+
+</body>
+</html>

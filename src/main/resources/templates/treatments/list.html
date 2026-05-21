@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Servicii medicale</title>
+</head>
+<body>
+
+<h1>Servicii medicale</h1>
+
+<p>
+    <a th:href="@{/dashboard}">Dashboard</a> |
+    <a th:href="@{/admin/treatments/new}">Adaugă serviciu medical</a> |
+    <a th:href="@{/admin/departments}">Departamente</a> |
+    <a th:href="@{/admin/doctors}">Doctori</a> |
+    <a th:href="@{/admin/patients}">Pacienți</a> |
+    <a th:href="@{/admin/appointments}">Programări</a> |
+    <a th:href="@{/admin/medical-records}">Fișe medicale</a>
+</p>
+
+<table border="1" cellpadding="8">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>
+            <a th:href="@{/admin/treatments(sortBy='name', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
+                Nume serviciu
+                <span th:if="${sortBy == 'name'}"
+                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
+            </a>
+        </th>
+        <th>Descriere</th>
+        <th>
+            <a th:href="@{/admin/treatments(sortBy='price', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
+                Preț
+                <span th:if="${sortBy == 'price'}"
+                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
+            </a>
+        </th>
+        <th>Acțiuni</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    <tr th:each="treatment : ${treatmentPage.content}">
+        <td th:text="${treatment.id}">1</td>
+        <td th:text="${treatment.name}">Consultație</td>
+        <td th:text="${treatment.description}">Descriere</td>
+        <td th:text="${treatment.price}">100</td>
+        <td>
+            <a th:href="@{/admin/treatments/edit/{id}(id=${treatment.id})}">Editează</a>
+            |
+            <a th:href="@{/admin/treatments/delete/{id}(id=${treatment.id})}"
+               onclick="return confirm('Sigur vrei să ștergi acest serviciu medical?')">
+                Șterge
+            </a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<div th:if="${treatmentPage.totalPages > 1}">
+    <p>
+        <a th:if="${currentPage > 0}"
+           th:href="@{/admin/treatments(page=${currentPage - 1}, sortBy=${sortBy}, direction=${direction})}">
+            Înapoi
+        </a>
+
+        <span>
+            Pagina <span th:text="${currentPage + 1}"></span>
+            din <span th:text="${treatmentPage.totalPages}"></span>
+        </span>
+
+        <a th:if="${currentPage + 1 < treatmentPage.totalPages}"
+           th:href="@{/admin/treatments(page=${currentPage + 1}, sortBy=${sortBy}, direction=${direction})}">
+            Înainte
+        </a>
+    </p>
+</div>
+
+<form th:action="@{/logout}" method="post">
+    <button type="submit">Logout</button>
+</form>
+
+</body>
+</html>
