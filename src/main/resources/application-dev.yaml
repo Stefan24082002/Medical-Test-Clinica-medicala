@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/clinic_db
     username: postgres
-    password: brunooo24
+    password: your_password_here
     driver-class-name: org.postgresql.Driver
 
   jpa:
