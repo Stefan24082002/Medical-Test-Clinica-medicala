@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalii fișă medicală - Medical Test</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="page">
+
+    <nav class="navbar">
+        <div class="navbar-logo-center">
+            <img th:src="@{/images/logo.png}" alt="Medical Test" class="main-logo">
+        </div>
+
+        <div class="navbar-right">
+            <span class="navbar-user">Pacient</span>
+
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <main class="container">
+
+        <section class="hero">
+            <h1>Detalii fișă medicală</h1>
+            <p>Vezi diagnosticul, prescripția, observațiile și serviciile recomandate de doctor.</p>
+            <span class="role-badge">
+                Fișa #
+                <span th:text="${record.id}">1</span>
+            </span>
+        </section>
+
+        <section>
+            <div class="page-actions">
+                <a class="btn" th:href="@{/dashboard}">Dashboard</a>
+                <a class="btn btn-outline" th:href="@{/patient/medical-records}">Înapoi la fișele mele</a>
+                <a class="btn btn-outline" th:href="@{/patient/appointments}">Programările mele</a>
+                <a class="btn btn-outline" th:href="@{/patient/appointments/new}">Fă o programare</a>
+            </div>
+
+            <div class="details-grid">
+
+                <div class="details-card">
+                    <h2>Informații medicale</h2>
+
+                    <div class="details-row">
+                        <span>ID fișă</span>
+                        <strong th:text="${record.id}">1</strong>
+                    </div>
+
+                    <div class="details-row">
+                        <span>Data fișei</span>
+                        <strong th:text="${record.recordDate}">2026-05-25</strong>
+                    </div>
+
+                    <div class="details-row">
+                        <span>Pacient</span>
+                        <strong th:text="${record.patient != null ? record.patient.firstName + ' ' + record.patient.lastName : 'Nespecificat'}">
+                            Pacient
+                        </strong>
+                    </div>
+
+                    <div class="details-row">
+                        <span>Doctor</span>
+                        <strong th:text="${record.doctor != null ? record.doctor.firstName + ' ' + record.doctor.lastName : 'Nespecificat'}">
+                            Doctor
+                        </strong>
+                    </div>
+
+                    <div class="details-row">
+                        <span>Programare</span>
+                        <strong>
+                            <span th:if="${record.appointment != null}"
+                                  th:text="${#temporals.format(record.appointment.appointmentDate, 'yyyy-MM-dd HH:mm')}">
+                                2026-05-25 10:00
+                            </span>
+
+                            <span th:if="${record.appointment == null}">
+                                Fără programare asociată
+                            </span>
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="details-card">
+                    <h2>Servicii recomandate</h2>
+
+                    <div class="details-total">
+                        <span>Total servicii</span>
+                        <strong>
+                            <span th:text="${record.totalServicesPrice}">0</span> lei
+                        </strong>
+                    </div>
+
+                    <div class="services-list">
+                        <p th:if="${record.recommendedTreatments == null or record.recommendedTreatments.isEmpty()}"
+                           class="muted-text">
+                            Nu există servicii medicale recomandate.
+                        </p>
+
+                        <div th:each="treatment : ${record.recommendedTreatments}" class="service-item">
+                            <span th:text="${treatment.name}">Serviciu</span>
+                            <strong>
+                                <span th:text="${treatment.price}">0</span> lei
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="medical-content-card">
+                <h2>Diagnostic</h2>
+                <p th:text="${record.diagnosis != null and !record.diagnosis.isBlank() ? record.diagnosis : '-'}">
+                    Diagnostic
+                </p>
+            </div>
+
+            <div class="medical-content-card">
+                <h2>Prescripție medicală</h2>
+                <p th:text="${record.prescription != null and !record.prescription.isBlank() ? record.prescription : '-'}">
+                    Prescripție
+                </p>
+            </div>
+
+            <div class="medical-content-card">
+                <h2>Observații</h2>
+                <p th:text="${record.notes != null and !record.notes.isBlank() ? record.notes : '-'}">
+                    Observații
+                </p>
+            </div>
+
+        </section>
+
+        <div class="footer-space"></div>
+    </main>
+</div>
+
+</body>
+</html>

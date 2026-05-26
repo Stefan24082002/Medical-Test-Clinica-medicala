@@ -25,14 +25,13 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
 
     public Appointment createAppointment(Appointment appointment) {
-        log.info("Creating appointment for patient id: {} and doctor id: {}",
-                appointment.getPatient() != null ? appointment.getPatient().getId() : null,
-                appointment.getDoctor() != null ? appointment.getDoctor().getId() : null);
+        log.info("Creating appointment");
 
-        validateAppointmentDate(appointment.getAppointmentDate());
-        validateAppointmentConflicts(appointment);
+        validateAppointment(appointment);
 
-        appointment.setStatus(AppointmentStatus.SCHEDULED);
+        if (appointment.getStatus() == null) {
+            appointment.setStatus(AppointmentStatus.SCHEDULED);
+        }
 
         return appointmentRepository.save(appointment);
     }
@@ -51,10 +50,7 @@ public class AppointmentService {
         log.info("Fetching appointment with id: {}", id);
 
         return appointmentRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Appointment not found with id: {}", id);
-                    return new ResourceNotFoundException("Programarea nu a fost găsită cu id-ul: " + id);
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Programarea nu a fost găsită cu id-ul: " + id));
     }
 
     public List<Appointment> getAppointmentsByPatient(Patient patient) {
@@ -72,46 +68,90 @@ public class AppointmentService {
 
         Appointment existingAppointment = getAppointmentById(id);
 
-        validateAppointmentDate(updatedAppointment.getAppointmentDate());
-
-        boolean doctorChanged = !existingAppointment.getDoctor().getId()
-                .equals(updatedAppointment.getDoctor().getId());
-
-        boolean patientChanged = !existingAppointment.getPatient().getId()
-                .equals(updatedAppointment.getPatient().getId());
-
-        boolean dateChanged = !existingAppointment.getAppointmentDate()
-                .equals(updatedAppointment.getAppointmentDate());
-
-        if (doctorChanged || patientChanged || dateChanged) {
-            validateAppointmentConflicts(updatedAppointment);
+        if (existingAppointment.getStatus() == AppointmentStatus.COMPLETED) {
+            throw new AppointmentConflictException("Nu poți edita o programare finalizată.");
         }
 
-        existingAppointment.setAppointmentDate(updatedAppointment.getAppointmentDate());
+        if (existingAppointment.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new AppointmentConflictException("Nu poți edita o programare anulată.");
+        }
+
+        if (existingAppointment.getStatus() == AppointmentStatus.REJECTED) {
+            throw new AppointmentConflictException("Nu poți edita o programare refuzată.");
+        }
+
         existingAppointment.setPatient(updatedAppointment.getPatient());
         existingAppointment.setDoctor(updatedAppointment.getDoctor());
+        existingAppointment.setAppointmentDate(updatedAppointment.getAppointmentDate());
         existingAppointment.setReason(updatedAppointment.getReason());
-        existingAppointment.setStatus(updatedAppointment.getStatus());
+
+        if (updatedAppointment.getStatus() != null) {
+            existingAppointment.setStatus(updatedAppointment.getStatus());
+        }
+
+        validateAppointmentForUpdate(id, existingAppointment);
 
         return appointmentRepository.save(existingAppointment);
+    }
+
+    public void acceptAppointment(Long id) {
+        log.info("Accepting appointment with id: {}", id);
+
+        Appointment appointment = getAppointmentById(id);
+
+        if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
+            throw new AppointmentConflictException("Doar programările în așteptare pot fi acceptate.");
+        }
+
+        appointment.setStatus(AppointmentStatus.ACCEPTED);
+        appointmentRepository.save(appointment);
+    }
+
+    public void rejectAppointment(Long id) {
+        log.info("Rejecting appointment with id: {}", id);
+
+        Appointment appointment = getAppointmentById(id);
+
+        if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
+            throw new AppointmentConflictException("Doar programările în așteptare pot fi refuzate.");
+        }
+
+        appointment.setStatus(AppointmentStatus.REJECTED);
+        appointmentRepository.save(appointment);
     }
 
     public Appointment cancelAppointment(Long id) {
         log.info("Cancelling appointment with id: {}", id);
 
         Appointment appointment = getAppointmentById(id);
+
+        if (appointment.getStatus() == AppointmentStatus.COMPLETED) {
+            throw new AppointmentConflictException("Nu poți anula o programare finalizată.");
+        }
+
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new AppointmentConflictException("Programarea este deja anulată.");
+        }
+
+        if (appointment.getStatus() == AppointmentStatus.REJECTED) {
+            throw new AppointmentConflictException("Nu poți anula o programare refuzată.");
+        }
+
         appointment.setStatus(AppointmentStatus.CANCELLED);
 
         return appointmentRepository.save(appointment);
     }
-
-    public Appointment completeAppointment(Long id) {
+    public void completeAppointment(Long id) {
         log.info("Completing appointment with id: {}", id);
 
         Appointment appointment = getAppointmentById(id);
-        appointment.setStatus(AppointmentStatus.COMPLETED);
 
-        return appointmentRepository.save(appointment);
+        if (appointment.getStatus() != AppointmentStatus.ACCEPTED) {
+            throw new AppointmentConflictException("Doar programările acceptate pot fi finalizate.");
+        }
+
+        appointment.setStatus(AppointmentStatus.COMPLETED);
+        appointmentRepository.save(appointment);
     }
 
     public void deleteAppointment(Long id) {
@@ -119,6 +159,54 @@ public class AppointmentService {
 
         Appointment appointment = getAppointmentById(id);
         appointmentRepository.delete(appointment);
+    }
+
+    private void validateAppointment(Appointment appointment) {
+        if (appointment.getPatient() == null) {
+            throw new AppointmentConflictException("Pacientul este obligatoriu.");
+        }
+
+        if (appointment.getDoctor() == null) {
+            throw new AppointmentConflictException("Doctorul este obligatoriu.");
+        }
+
+        validateAppointmentDate(appointment.getAppointmentDate());
+
+        if (appointmentRepository.existsByDoctorAndAppointmentDate(
+                appointment.getDoctor(),
+                appointment.getAppointmentDate())) {
+
+            throw new AppointmentConflictException(
+                    "Doctorul are deja o programare la această dată și oră."
+            );
+        }
+    }
+
+    private void validateAppointmentForUpdate(Long appointmentId, Appointment appointment) {
+        if (appointment.getPatient() == null) {
+            throw new AppointmentConflictException("Pacientul este obligatoriu.");
+        }
+
+        if (appointment.getDoctor() == null) {
+            throw new AppointmentConflictException("Doctorul este obligatoriu.");
+        }
+
+        validateAppointmentDate(appointment.getAppointmentDate());
+
+        List<Appointment> doctorAppointments =
+                appointmentRepository.findByDoctor(appointment.getDoctor());
+
+        boolean conflictExists = doctorAppointments.stream()
+                .anyMatch(existingAppointment ->
+                        !existingAppointment.getId().equals(appointmentId)
+                                && existingAppointment.getAppointmentDate().equals(appointment.getAppointmentDate())
+                );
+
+        if (conflictExists) {
+            throw new AppointmentConflictException(
+                    "Doctorul are deja o altă programare la această dată și oră."
+            );
+        }
     }
 
     private void validateAppointmentDate(LocalDateTime appointmentDate) {
@@ -141,30 +229,6 @@ public class AppointmentService {
 
         if (!(time.getMinute() == 0 || time.getMinute() == 30)) {
             throw new AppointmentConflictException("Programările trebuie să fie din 30 în 30 de minute.");
-        }
-    }
-
-    private void validateAppointmentConflicts(Appointment appointment) {
-        Doctor doctor = appointment.getDoctor();
-        Patient patient = appointment.getPatient();
-        LocalDateTime appointmentDate = appointment.getAppointmentDate();
-
-        if (doctor == null) {
-            throw new AppointmentConflictException("Doctorul este obligatoriu pentru programare.");
-        }
-
-        if (patient == null) {
-            throw new AppointmentConflictException("Pacientul este obligatoriu pentru programare.");
-        }
-
-        if (appointmentRepository.existsByDoctorAndAppointmentDate(doctor, appointmentDate)) {
-            log.error("Doctor already has appointment at: {}", appointmentDate);
-            throw new AppointmentConflictException("Doctorul are deja o programare la această oră.");
-        }
-
-        if (appointmentRepository.existsByPatientAndAppointmentDate(patient, appointmentDate)) {
-            log.error("Patient already has appointment at: {}", appointmentDate);
-            throw new AppointmentConflictException("Pacientul are deja o programare la această oră.");
         }
     }
 }

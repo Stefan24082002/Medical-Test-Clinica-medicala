@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${pageTitle}">Fișă medicală</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="page">
+
+    <nav class="navbar">
+        <div class="navbar-logo-center">
+            <img th:src="@{/images/logo.png}" alt="Medical Test" class="main-logo">
+        </div>
+
+        <div class="navbar-right">
+            <span class="navbar-user">Doctor</span>
+
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <main class="container">
+
+        <section class="hero">
+            <h1 th:text="${pageTitle}">Fișă medicală</h1>
+            <p>Alege programarea, iar pacientul, data și serviciile recomandate se completează automat.</p>
+            <span class="role-badge">DOCTOR PANEL</span>
+        </section>
+
+        <section>
+            <div class="page-actions">
+                <a class="btn" th:href="@{/dashboard}">Dashboard</a>
+                <a class="btn btn-outline" th:href="@{/doctor/appointments}">Programările mele</a>
+                <a class="btn btn-outline" th:href="@{/doctor/medical-records}">Fișe medicale create</a>
+            </div>
+
+            <div class="form-card">
+
+                <div th:if="${errorMessage}" class="error-message" th:text="${errorMessage}">
+                    Eroare
+                </div>
+
+                <form th:action="${medicalRecord.id == null} ? @{/doctor/medical-records} : @{/doctor/medical-records/edit/{id}(id=${medicalRecord.id})}"
+                      th:object="${medicalRecord}"
+                      method="post">
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label>Programare asociată</label>
+
+                            <select name="appointmentId" id="appointmentSelect">
+                                <option value="">-- Alege programare --</option>
+
+                                <option th:each="appointment : ${appointments}"
+                                        th:value="${appointment.id}"
+
+                                        th:data-patient-id="${appointment.patient != null ? appointment.patient.id : ''}"
+                                        th:data-date="${#temporals.format(appointment.appointmentDate, 'yyyy-MM-dd')}"
+                                        th:data-datetime="${#temporals.format(appointment.appointmentDate, 'yyyy-MM-dd HH:mm')}"
+                                        th:data-department="${appointment.doctor != null and appointment.doctor.department != null ? appointment.doctor.department.name : ''}"
+
+                                        th:text="${'#' + appointment.id
+                                            + ' | ' + #temporals.format(appointment.appointmentDate, 'yyyy-MM-dd HH:mm')
+                                            + ' | Pacient: ' + appointment.patient.firstName + ' ' + appointment.patient.lastName
+                                            + ' | Departament: ' + (appointment.doctor.department != null ? appointment.doctor.department.name : 'Nespecificat')}"
+
+                                        th:selected="${medicalRecord.appointment != null and medicalRecord.appointment.id == appointment.id}">
+                                </option>
+                            </select>
+
+                            <p class="muted-text" id="appointmentInfo" style="margin-top: 10px;">
+                                Selectează o programare pentru completare automată.
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Data fișei</label>
+                            <input type="date"
+                                   id="recordDateInput"
+                                   th:field="*{recordDate}">
+                            <div th:if="${#fields.hasErrors('recordDate')}"
+                                 th:errors="*{recordDate}"
+                                 class="field-error">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Pacient</label>
+                            <select name="patientId" id="patientSelect">
+                                <option value="">-- Alege pacient --</option>
+
+                                <option th:each="patient : ${patients}"
+                                        th:value="${patient.id}"
+                                        th:text="${patient.firstName + ' ' + patient.lastName}"
+                                        th:selected="${medicalRecord.patient != null and medicalRecord.patient.id == patient.id}">
+                                </option>
+                            </select>
+
+                            <p class="muted-text" style="margin-top: 8px;">
+                                Dacă alegi programarea, pacientul se completează automat.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+                        <label>Diagnostic</label>
+                        <textarea th:field="*{diagnosis}"
+                                  rows="4"
+                                  placeholder="Diagnostic pacient"
+                                  required></textarea>
+                        <div th:if="${#fields.hasErrors('diagnosis')}"
+                             th:errors="*{diagnosis}"
+                             class="field-error">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Prescripție</label>
+                        <textarea th:field="*{prescription}"
+                                  rows="4"
+                                  placeholder="Tratament / prescripție medicală"></textarea>
+                        <div th:if="${#fields.hasErrors('prescription')}"
+                             th:errors="*{prescription}"
+                             class="field-error">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Observații</label>
+                        <textarea th:field="*{notes}"
+                                  rows="4"
+                                  placeholder="Observații suplimentare"></textarea>
+                        <div th:if="${#fields.hasErrors('notes')}"
+                             th:errors="*{notes}"
+                             class="field-error">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Servicii recomandate</label>
+
+                        <p class="muted-text" id="servicesInfo">
+                            Alege o programare pentru a filtra serviciile după departament.
+                        </p>
+
+                        <div class="treatment-card-grid" id="treatmentsList">
+
+                            <label th:each="treatment : ${treatments}"
+                                   class="treatment-card-item"
+                                   th:data-department="${treatment.department != null ? treatment.department.name : ''}">
+
+                                <input type="checkbox"
+                                       name="treatmentIds"
+                                       th:value="${treatment.id}"
+                                       th:checked="${medicalRecord.recommendedTreatments != null and medicalRecord.recommendedTreatments.contains(treatment)}">
+
+                                <div class="treatment-card-content">
+                                    <div class="treatment-card-title" th:text="${treatment.name}">
+                                        Consultație
+                                    </div>
+
+                                    <div class="treatment-card-meta">
+                                        <span th:text="${treatment.department != null ? treatment.department.name : 'Nespecificat'}">
+                                            Departament
+                                        </span>
+                                    </div>
+
+                                    <div class="treatment-card-price">
+                                        <span th:text="${treatment.price}">0</span> lei
+                                    </div>
+                                </div>
+                            </label>
+
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit">Salvează</button>
+                        <a class="btn btn-outline" th:href="@{/doctor/medical-records}">Anulează</a>
+                    </div>
+
+                </form>
+            </div>
+        </section>
+
+        <div class="footer-space"></div>
+    </main>
+</div>
+
+<script>
+    function normalizeText(value) {
+        if (!value) {
+            return "";
+        }
+
+        return value
+            .toString()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .trim();
+    }
+
+    function filterTreatmentsByDepartment(department) {
+        const items = document.querySelectorAll(".treatment-card-item");
+        const info = document.getElementById("servicesInfo");
+        const selectedDepartment = normalizeText(department);
+
+        let visibleCount = 0;
+
+        items.forEach(item => {
+            const itemDepartment = normalizeText(item.dataset.department);
+            const checkbox = item.querySelector("input[type='checkbox']");
+
+            if (!selectedDepartment) {
+                item.style.display = "flex";
+                visibleCount++;
+                return;
+            }
+
+            if (itemDepartment === selectedDepartment) {
+                item.style.display = "flex";
+                visibleCount++;
+            } else {
+                item.style.display = "none";
+                checkbox.checked = false;
+            }
+        });
+
+        if (!selectedDepartment) {
+            info.textContent = "Nu s-a putut determina departamentul. Sunt afișate toate serviciile.";
+        } else if (visibleCount === 0) {
+            info.textContent = "Nu există servicii pentru departamentul selectat: " + department + ".";
+        } else {
+            info.textContent = "Sunt afișate doar serviciile din departamentul: " + department + ".";
+        }
+    }
+
+    function updateFromAppointment() {
+        const appointmentSelect = document.getElementById("appointmentSelect");
+        const patientSelect = document.getElementById("patientSelect");
+        const recordDateInput = document.getElementById("recordDateInput");
+        const appointmentInfo = document.getElementById("appointmentInfo");
+
+        const selectedOption = appointmentSelect.options[appointmentSelect.selectedIndex];
+
+        if (!selectedOption || !selectedOption.value) {
+            appointmentInfo.textContent = "Selectează o programare pentru completare automată.";
+            filterTreatmentsByDepartment("");
+            return;
+        }
+
+        const patientId = selectedOption.dataset.patientId;
+        const date = selectedOption.dataset.date;
+        const datetime = selectedOption.dataset.datetime;
+        const department = selectedOption.dataset.department;
+
+        if (patientId) {
+            patientSelect.value = patientId;
+        }
+
+        if (date) {
+            recordDateInput.value = date;
+        }
+
+        appointmentInfo.textContent = "Programare selectată: " + datetime
+            + " | Departament: " + (department || "nespecificat");
+
+        filterTreatmentsByDepartment(department);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const appointmentSelect = document.getElementById("appointmentSelect");
+
+        appointmentSelect.addEventListener("change", updateFromAppointment);
+
+        if (appointmentSelect.value) {
+            updateFromAppointment();
+        } else {
+            filterTreatmentsByDepartment("");
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,20 +1,18 @@
 package com.example.clinic.controller;
 
-import com.example.clinic.entity.Appointment;
-import com.example.clinic.entity.MedicalRecord;
-import com.example.clinic.entity.Treatment;
-import com.example.clinic.service.AppointmentService;
-import com.example.clinic.service.DoctorService;
-import com.example.clinic.service.MedicalRecordService;
-import com.example.clinic.service.PatientService;
-import com.example.clinic.service.TreatmentService;
+import com.example.clinic.entity.*;
+import com.example.clinic.service.*;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -43,9 +41,9 @@ public class MedicalRecordController {
                 : Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<MedicalRecord> medicalRecordPage = medicalRecordService.getAllMedicalRecords(pageable);
+        Page<MedicalRecord> recordPage = medicalRecordService.getAllMedicalRecords(pageable);
 
-        model.addAttribute("medicalRecordPage", medicalRecordPage);
+        model.addAttribute("recordPage", recordPage);
         model.addAttribute("currentPage", page);
         model.addAttribute("sortBy", sortBy);
         model.addAttribute("direction", direction);
@@ -55,75 +53,57 @@ public class MedicalRecordController {
 
     @GetMapping("/new")
     public String showCreateForm(Model model) {
-        MedicalRecord medicalRecord = new MedicalRecord();
-        medicalRecord.setRecordDate(LocalDate.now());
-
-        model.addAttribute("medicalRecord", medicalRecord);
-        model.addAttribute("pageTitle", "Adaugă fișă medicală");
-        addFormData(model);
+        model.addAttribute("medicalRecord", new MedicalRecord());
+        prepareFormModel(model, "Adaugă fișă medicală");
 
         return "medical-records/form";
     }
 
     @PostMapping
     public String createMedicalRecord(
-            @ModelAttribute("medicalRecord") MedicalRecord medicalRecord,
+            @Valid @ModelAttribute("medicalRecord") MedicalRecord medicalRecord,
+            BindingResult bindingResult,
+            @RequestParam(required = false) Long appointmentId,
             @RequestParam(required = false) Long patientId,
             @RequestParam(required = false) Long doctorId,
-            @RequestParam(required = false) Long appointmentId,
             @RequestParam(required = false) List<Long> treatmentIds,
             Model model) {
 
+        if (bindingResult.hasErrors()) {
+            prepareFormModel(model, "Adaugă fișă medicală");
+            return "medical-records/form";
+        }
+
         try {
-            if (medicalRecord.getDiagnosis() == null || medicalRecord.getDiagnosis().isBlank()) {
-                throw new RuntimeException("Diagnosticul este obligatoriu.");
-            }
-
-            if (appointmentId != null) {
-                Appointment appointment = appointmentService.getAppointmentById(appointmentId);
-
-                medicalRecord.setAppointment(appointment);
-                medicalRecord.setRecordDate(appointment.getAppointmentDate().toLocalDate());
-                medicalRecord.setPatient(appointment.getPatient());
-                medicalRecord.setDoctor(appointment.getDoctor());
-            } else {
-                if (medicalRecord.getRecordDate() == null) {
-                    medicalRecord.setRecordDate(LocalDate.now());
-                }
-
-                if (patientId == null) {
-                    throw new RuntimeException("Pacientul este obligatoriu.");
-                }
-
-                medicalRecord.setPatient(patientService.getPatientById(patientId));
-
-                if (doctorId != null) {
-                    medicalRecord.setDoctor(doctorService.getDoctorById(doctorId));
-                }
-            }
-
-            medicalRecord.setRecommendedTreatments(getSelectedTreatments(treatmentIds));
+            setRelations(medicalRecord, appointmentId, patientId, doctorId, treatmentIds);
 
             medicalRecordService.createMedicalRecord(medicalRecord);
 
             return "redirect:/admin/medical-records";
 
         } catch (Exception e) {
-            model.addAttribute("medicalRecord", medicalRecord);
-            model.addAttribute("pageTitle", "Adaugă fișă medicală");
+            prepareFormModel(model, "Adaugă fișă medicală");
             model.addAttribute("errorMessage", e.getMessage());
-            addFormData(model);
+
             return "medical-records/form";
         }
     }
 
+    @GetMapping("/{id}")
+    public String showDetails(@PathVariable Long id, Model model) {
+        MedicalRecord record = medicalRecordService.getMedicalRecordById(id);
+
+        model.addAttribute("record", record);
+
+        return "medical-records/details";
+    }
+
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model) {
-        MedicalRecord medicalRecord = medicalRecordService.getMedicalRecordById(id);
+        MedicalRecord record = medicalRecordService.getMedicalRecordById(id);
 
-        model.addAttribute("medicalRecord", medicalRecord);
-        model.addAttribute("pageTitle", "Editează fișă medicală");
-        addFormData(model);
+        model.addAttribute("medicalRecord", record);
+        prepareEditFormModel(model, record, "Editează fișă medicală");
 
         return "medical-records/form";
     }
@@ -131,52 +111,30 @@ public class MedicalRecordController {
     @PostMapping("/edit/{id}")
     public String updateMedicalRecord(
             @PathVariable Long id,
-            @ModelAttribute("medicalRecord") MedicalRecord medicalRecord,
+            @Valid @ModelAttribute("medicalRecord") MedicalRecord medicalRecord,
+            BindingResult bindingResult,
+            @RequestParam(required = false) Long appointmentId,
             @RequestParam(required = false) Long patientId,
             @RequestParam(required = false) Long doctorId,
-            @RequestParam(required = false) Long appointmentId,
             @RequestParam(required = false) List<Long> treatmentIds,
             Model model) {
 
+        if (bindingResult.hasErrors()) {
+            prepareFormModel(model, "Editează fișă medicală");
+            return "medical-records/form";
+        }
+
         try {
-            if (medicalRecord.getDiagnosis() == null || medicalRecord.getDiagnosis().isBlank()) {
-                throw new RuntimeException("Diagnosticul este obligatoriu.");
-            }
-
-            if (appointmentId != null) {
-                Appointment appointment = appointmentService.getAppointmentById(appointmentId);
-
-                medicalRecord.setAppointment(appointment);
-                medicalRecord.setRecordDate(appointment.getAppointmentDate().toLocalDate());
-                medicalRecord.setPatient(appointment.getPatient());
-                medicalRecord.setDoctor(appointment.getDoctor());
-            } else {
-                if (medicalRecord.getRecordDate() == null) {
-                    medicalRecord.setRecordDate(LocalDate.now());
-                }
-
-                if (patientId == null) {
-                    throw new RuntimeException("Pacientul este obligatoriu.");
-                }
-
-                medicalRecord.setPatient(patientService.getPatientById(patientId));
-
-                if (doctorId != null) {
-                    medicalRecord.setDoctor(doctorService.getDoctorById(doctorId));
-                }
-            }
-
-            medicalRecord.setRecommendedTreatments(getSelectedTreatments(treatmentIds));
+            setRelations(medicalRecord, appointmentId, patientId, doctorId, treatmentIds);
 
             medicalRecordService.updateMedicalRecord(id, medicalRecord);
 
             return "redirect:/admin/medical-records";
 
         } catch (Exception e) {
-            model.addAttribute("medicalRecord", medicalRecord);
-            model.addAttribute("pageTitle", "Editează fișă medicală");
+            prepareFormModel(model, "Editează fișă medicală");
             model.addAttribute("errorMessage", e.getMessage());
-            addFormData(model);
+
             return "medical-records/form";
         }
     }
@@ -184,25 +142,81 @@ public class MedicalRecordController {
     @GetMapping("/delete/{id}")
     public String deleteMedicalRecord(@PathVariable Long id) {
         medicalRecordService.deleteMedicalRecord(id);
+
         return "redirect:/admin/medical-records";
     }
 
-    private void addFormData(Model model) {
+    private void prepareFormModel(Model model, String pageTitle) {
+        List<Appointment> availableAppointments = appointmentService.getAllAppointments().stream()
+                .filter(appointment ->
+                        appointment.getStatus() == AppointmentStatus.ACCEPTED
+                                || appointment.getStatus() == AppointmentStatus.COMPLETED
+                )
+                .filter(appointment -> !medicalRecordService.existsByAppointment(appointment))
+                .toList();
+
         model.addAttribute("patients", patientService.getAllPatients());
         model.addAttribute("doctors", doctorService.getAllDoctors());
-        model.addAttribute("appointments", appointmentService.getAllAppointments());
+        model.addAttribute("appointments", availableAppointments);
         model.addAttribute("treatments", treatmentService.getAllTreatments());
+        model.addAttribute("pageTitle", pageTitle);
     }
+    private void prepareEditFormModel(Model model, MedicalRecord currentRecord, String pageTitle) {
+        List<Appointment> availableAppointments = appointmentService.getAllAppointments().stream()
+                .filter(appointment ->
+                        appointment.getStatus() == AppointmentStatus.ACCEPTED
+                                || appointment.getStatus() == AppointmentStatus.COMPLETED
+                )
+                .filter(appointment -> {
+                    if (currentRecord.getAppointment() != null
+                            && currentRecord.getAppointment().getId().equals(appointment.getId())) {
+                        return true;
+                    }
 
-    private Set<Treatment> getSelectedTreatments(List<Long> treatmentIds) {
+                    return !medicalRecordService.existsByAppointment(appointment);
+                })
+                .toList();
+
+        model.addAttribute("patients", patientService.getAllPatients());
+        model.addAttribute("doctors", doctorService.getAllDoctors());
+        model.addAttribute("appointments", availableAppointments);
+        model.addAttribute("treatments", treatmentService.getAllTreatments());
+        model.addAttribute("pageTitle", pageTitle);
+    }
+    private void setRelations(
+            MedicalRecord medicalRecord,
+            Long appointmentId,
+            Long patientId,
+            Long doctorId,
+            List<Long> treatmentIds) {
+
+        if (appointmentId != null) {
+            Appointment appointment = appointmentService.getAppointmentById(appointmentId);
+
+            medicalRecord.setAppointment(appointment);
+            medicalRecord.setPatient(appointment.getPatient());
+            medicalRecord.setDoctor(appointment.getDoctor());
+        } else {
+            if (patientId != null) {
+                Patient patient = patientService.getPatientById(patientId);
+                medicalRecord.setPatient(patient);
+            }
+
+            if (doctorId != null) {
+                Doctor doctor = doctorService.getDoctorById(doctorId);
+                medicalRecord.setDoctor(doctor);
+            }
+        }
+
         Set<Treatment> selectedTreatments = new HashSet<>();
 
         if (treatmentIds != null) {
             for (Long treatmentId : treatmentIds) {
-                selectedTreatments.add(treatmentService.getTreatmentById(treatmentId));
+                Treatment treatment = treatmentService.getTreatmentById(treatmentId);
+                selectedTreatments.add(treatment);
             }
         }
 
-        return selectedTreatments;
+        medicalRecord.setRecommendedTreatments(selectedTreatments);
     }
 }

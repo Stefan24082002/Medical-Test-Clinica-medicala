@@ -2,110 +2,164 @@
 <html lang="ro" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Fișe medicale</title>
+    <title>Fișe medicale - Medical Test</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 
-<h1>Fișe medicale</h1>
+<div class="page">
 
-<p>
-    <a th:href="@{/dashboard}">Dashboard</a> |
-    <a th:href="@{/admin/medical-records/new}">Adaugă fișă medicală</a> |
-    <a th:href="@{/admin/appointments}">Programări</a> |
-    <a th:href="@{/admin/patients}">Pacienți</a> |
-    <a th:href="@{/admin/doctors}">Doctori</a> |
-    <a th:href="@{/admin/treatments}">Servicii medicale</a>
-</p>
+    <nav class="navbar">
+        <div class="navbar-logo-center">
+            <img th:src="@{/images/logo.png}" alt="Medical Test" class="main-logo">
+        </div>
 
-<table border="1" cellpadding="8">
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>
-            <a th:href="@{/admin/medical-records(sortBy='recordDate', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
-                Data fișei
-                <span th:if="${sortBy == 'recordDate'}"
-                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
-            </a>
-        </th>
-        <th>Pacient</th>
-        <th>Doctor</th>
-        <th>Diagnostic</th>
-        <th>Prescripție</th>
-        <th>Servicii recomandate</th>
-        <th>Total servicii</th>
-        <th>Acțiuni</th>
-    </tr>
-    </thead>
+        <div class="navbar-right">
+            <span class="navbar-user">Admin</span>
 
-    <tbody>
-    <tr th:each="record : ${medicalRecordPage.content}">
-        <td th:text="${record.id}">1</td>
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
 
-        <td th:text="${record.recordDate}">2026-05-20</td>
+    <main class="container">
 
-        <td th:text="${record.patient.firstName + ' ' + record.patient.lastName}">
-            Pacient
-        </td>
+        <section class="hero">
+            <h1>Fișe medicale</h1>
+            <p>Vizualizează istoricul medical, diagnosticele, prescripțiile și serviciile recomandate pacienților.</p>
+            <span class="role-badge">ADMIN PANEL</span>
+        </section>
 
-        <td th:text="${record.doctor != null ? record.doctor.firstName + ' ' + record.doctor.lastName : 'Nespecificat'}">
-            Doctor
-        </td>
+        <section>
+            <div class="page-actions">
+                <a class="btn" th:href="@{/dashboard}">Dashboard</a>
+                <a class="btn" th:href="@{/admin/medical-records/new}">Adaugă fișă medicală</a>
+                <a class="btn btn-outline" th:href="@{/admin/appointments}">Programări</a>
+                <a class="btn btn-outline" th:href="@{/admin/patients}">Pacienți</a>
+                <a class="btn btn-outline" th:href="@{/admin/doctors}">Doctori</a>
+                <a class="btn btn-outline" th:href="@{/admin/treatments}">Servicii medicale</a>
+            </div>
 
-        <td th:text="${record.diagnosis}">Diagnostic</td>
+            <div class="table-card">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>ID</th>
 
-        <td th:text="${record.prescription != null and !record.prescription.isBlank() ? record.prescription : '-'}">
-            Prescripție
-        </td>
+                        <th>
+                            <a th:href="@{/admin/medical-records(page=${currentPage}, sortBy='recordDate', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
+                                Data fișei
+                                <span th:if="${sortBy == 'recordDate'}"
+                                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
+                            </a>
+                        </th>
 
-        <td>
-            <span th:if="${record.recommendedTreatments == null or record.recommendedTreatments.isEmpty()}">
-                Niciun serviciu recomandat
-            </span>
+                        <th>Pacient</th>
+                        <th>Doctor</th>
+                        <th>Diagnostic</th>
+                        <th>Prescripție</th>
+                        <th>Servicii</th>
+                        <th>Total</th>
+                        <th>Acțiuni</th>
+                    </tr>
+                    </thead>
 
-            <span th:each="treatment, iterStat : ${record.recommendedTreatments}">
-                <span th:text="${treatment.name}">Serviciu</span><span th:if="${!iterStat.last}">, </span>
-            </span>
-        </td>
+                    <tbody>
+                    <tr th:if="${recordPage == null or recordPage.content.isEmpty()}">
+                        <td colspan="9">Nu există fișe medicale.</td>
+                    </tr>
 
-        <td>
-            <strong th:text="${record.totalServicesPrice}">0</strong> lei
-        </td>
+                    <tr th:each="record : ${recordPage.content}">
+                        <td>
+                            <a class="record-link"
+                               th:href="@{/admin/medical-records/{id}(id=${record.id})}">
+                                Fișa #
+                                <span th:text="${record.id}">1</span>
+                            </a>
+                        </td>
 
-        <td>
-            <a th:href="@{/admin/medical-records/edit/{id}(id=${record.id})}">Editează</a>
-            |
-            <a th:href="@{/admin/medical-records/delete/{id}(id=${record.id})}"
-               onclick="return confirm('Sigur vrei să ștergi această fișă medicală?')">
-                Șterge
-            </a>
-        </td>
-    </tr>
-    </tbody>
-</table>
+                        <td th:text="${record.recordDate}">2026-05-25</td>
 
-<div th:if="${medicalRecordPage.totalPages > 1}">
-    <p>
-        <a th:if="${currentPage > 0}"
-           th:href="@{/admin/medical-records(page=${currentPage - 1}, sortBy=${sortBy}, direction=${direction})}">
-            Înapoi
-        </a>
+                        <td th:text="${record.patient != null ? record.patient.firstName + ' ' + record.patient.lastName : 'Nespecificat'}">
+                            Pacient
+                        </td>
 
-        <span>
-            Pagina <span th:text="${currentPage + 1}"></span>
-            din <span th:text="${medicalRecordPage.totalPages}"></span>
-        </span>
+                        <td th:text="${record.doctor != null ? record.doctor.firstName + ' ' + record.doctor.lastName : 'Nespecificat'}">
+                            Doctor
+                        </td>
 
-        <a th:if="${currentPage + 1 < medicalRecordPage.totalPages}"
-           th:href="@{/admin/medical-records(page=${currentPage + 1}, sortBy=${sortBy}, direction=${direction})}">
-            Înainte
-        </a>
-    </p>
+                        <td th:text="${record.diagnosis != null and !record.diagnosis.isBlank() ? record.diagnosis : '-'}">
+                            Diagnostic
+                        </td>
+
+                        <td th:text="${record.prescription != null and !record.prescription.isBlank() ? record.prescription : '-'}">
+                            Prescripție
+                        </td>
+
+                        <td>
+                            <span th:if="${record.recommendedTreatments == null or record.recommendedTreatments.isEmpty()}"
+                                  class="muted-text">
+                                -
+                            </span>
+
+                            <span th:each="treatment, iterStat : ${record.recommendedTreatments}">
+                                <span th:text="${treatment.name}">Serviciu</span><span th:if="${!iterStat.last}">, </span>
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="price-badge">
+                                <strong th:text="${record.totalServicesPrice}">0</strong> lei
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="action-group">
+                                <a class="action-link"
+                                   th:href="@{/admin/medical-records/{id}(id=${record.id})}">
+                                    Detalii
+                                </a>
+
+                                <a class="action-link"
+                                   th:href="@{/admin/medical-records/edit/{id}(id=${record.id})}">
+                                    Editează
+                                </a>
+
+                                <a class="action-link danger"
+                                   th:href="@{/admin/medical-records/delete/{id}(id=${record.id})}"
+                                   onclick="return confirm('Sigur vrei să ștergi această fișă medicală?')">
+                                    Șterge
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination"
+                 th:if="${recordPage != null and recordPage.totalPages > 1}">
+
+                <span th:text="'Pagina ' + (${currentPage} + 1) + ' din ' + ${recordPage.totalPages}">
+                    Pagina 1 din 2
+                </span>
+
+                <a th:if="${recordPage.hasPrevious()}"
+                   th:href="@{/admin/medical-records(page=${currentPage - 1}, sortBy=${sortBy}, direction=${direction})}">
+                    Înapoi
+                </a>
+
+                <a th:if="${recordPage.hasNext()}"
+                   th:href="@{/admin/medical-records(page=${currentPage + 1}, sortBy=${sortBy}, direction=${direction})}">
+                    Înainte
+                </a>
+            </div>
+        </section>
+
+        <div class="footer-space"></div>
+    </main>
 </div>
-
-<form th:action="@{/logout}" method="post">
-    <button type="submit">Logout</button>
-</form>
 
 </body>
 </html>

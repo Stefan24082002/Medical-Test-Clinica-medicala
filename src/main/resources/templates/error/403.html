@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Acces interzis</title>
+</head>
+<body>
+
+<h1>403 - Acces interzis</h1>
+
+<p>Nu ai permisiunea necesară pentru a accesa această pagină.</p>
+
+<p>
+    Este posibil să fii autentificat cu un rol care nu are acces aici.
+</p>
+
+<p>
+    <a th:href="@{/dashboard}">Înapoi la dashboard</a> |
+    <a th:href="@{/login}">Autentificare</a>
+</p>
+
+<form th:action="@{/logout}" method="post">
+    <button type="submit">Logout</button>
+</form>
+
+</body>
+</html>

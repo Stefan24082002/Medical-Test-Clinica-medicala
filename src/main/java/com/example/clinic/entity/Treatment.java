@@ -1,9 +1,9 @@
 package com.example.clinic.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -23,15 +23,21 @@ public class Treatment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Numele tratamentului este obligatoriu")
-    @Column(nullable = false, unique = true)
+    @NotBlank(message = "Numele serviciului este obligatoriu")
+    @Column(nullable = false)
     private String name;
 
+    @Column(length = 1000)
     private String description;
 
     @NotNull(message = "Prețul este obligatoriu")
-    @PositiveOrZero(message = "Prețul nu poate fi negativ")
+    @DecimalMin(value = "0.0", inclusive = true, message = "Prețul trebuie să fie pozitiv")
+    @Column(nullable = false)
     private BigDecimal price;
+
+    @ManyToOne
+    @JoinColumn(name = "department_id")
+    private Department department;
 
     @ManyToMany(mappedBy = "treatments")
     private Set<Doctor> doctors = new HashSet<>();

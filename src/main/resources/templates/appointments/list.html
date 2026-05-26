@@ -2,91 +2,195 @@
 <html lang="ro" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Programări</title>
+    <title>Programări - Medical Test</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 
-<h1>Programări</h1>
+<div class="page">
 
-<p>
-    <a th:href="@{/dashboard}">Dashboard</a> |
-    <a th:href="@{/admin/appointments/new}">Adaugă programare</a> |
-    <a th:href="@{/admin/patients}">Pacienți</a> |
-    <a th:href="@{/admin/doctors}">Doctori</a> |
-    <a th:href="@{/admin/treatments}">Servicii medicale</a>
-</p>
+    <nav class="navbar">
+        <div class="navbar-logo-center">
+            <img th:src="@{/images/logo.png}" alt="Medical Test" class="main-logo">
+        </div>
 
-<table border="1" cellpadding="8">
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>
-            <a th:href="@{/admin/appointments(sortBy='appointmentDate', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
-                Data programării
-                <span th:if="${sortBy == 'appointmentDate'}"
-                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
-            </a>
-        </th>
-        <th>Pacient</th>
-        <th>Doctor</th>
-        <th>Motiv</th>
-        <th>
-            <a th:href="@{/admin/appointments(sortBy='status', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
-                Status
-                <span th:if="${sortBy == 'status'}"
-                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
-            </a>
-        </th>
-        <th>Acțiuni</th>
-    </tr>
-    </thead>
+        <div class="navbar-right">
+            <span class="navbar-user">Admin</span>
 
-    <tbody>
-    <tr th:each="appointment : ${appointmentPage.content}">
-        <td th:text="${appointment.id}">1</td>
-        <td th:text="${#temporals.format(appointment.appointmentDate, 'yyyy-MM-dd HH:mm')}">2026-06-01 10:00</td>
-        <td th:text="${appointment.patient.firstName + ' ' + appointment.patient.lastName}">Pacient</td>
-        <td th:text="${appointment.doctor.firstName + ' ' + appointment.doctor.lastName}">Doctor</td>
-        <td th:text="${appointment.reason}">Control</td>
-        <td th:text="${appointment.status}">SCHEDULED</td>
-        <td>
-            <a th:href="@{/admin/appointments/edit/{id}(id=${appointment.id})}">Editează</a>
-            |
-            <a th:href="@{/admin/appointments/complete/{id}(id=${appointment.id})}">Finalizează</a>
-            |
-            <a th:href="@{/admin/appointments/cancel/{id}(id=${appointment.id})}">Anulează</a>
-            |
-            <a th:href="@{/admin/appointments/delete/{id}(id=${appointment.id})}"
-               onclick="return confirm('Sigur vrei să ștergi această programare?')">
-                Șterge
-            </a>
-        </td>
-    </tr>
-    </tbody>
-</table>
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
 
-<div th:if="${appointmentPage.totalPages > 1}">
-    <p>
-        <a th:if="${currentPage > 0}"
-           th:href="@{/admin/appointments(page=${currentPage - 1}, sortBy=${sortBy}, direction=${direction})}">
-            Înapoi
-        </a>
+    <main class="container">
 
-        <span>
-            Pagina <span th:text="${currentPage + 1}"></span>
-            din <span th:text="${appointmentPage.totalPages}"></span>
-        </span>
+        <section class="hero">
+            <h1>Programări</h1>
+            <p>Administrează programările pacienților, statusurile consultațiilor și fișele medicale asociate.</p>
+            <span class="role-badge">ADMIN PANEL</span>
+        </section>
 
-        <a th:if="${currentPage + 1 < appointmentPage.totalPages}"
-           th:href="@{/admin/appointments(page=${currentPage + 1}, sortBy=${sortBy}, direction=${direction})}">
-            Înainte
-        </a>
-    </p>
+        <section>
+            <div class="page-actions">
+                <a class="btn" th:href="@{/dashboard}">Dashboard</a>
+                <a class="btn" th:href="@{/admin/appointments/new}">Adaugă programare</a>
+                <a class="btn btn-outline" th:href="@{/admin/patients}">Pacienți</a>
+                <a class="btn btn-outline" th:href="@{/admin/doctors}">Doctori</a>
+                <a class="btn btn-outline" th:href="@{/admin/treatments}">Servicii medicale</a>
+            </div>
+
+            <div class="table-card">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+
+                        <th>
+                            <a th:href="@{/admin/appointments(page=${currentPage}, sortBy='appointmentDate', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
+                                Data programării
+                                <span th:if="${sortBy == 'appointmentDate'}"
+                                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
+                            </a>
+                        </th>
+
+                        <th>Pacient</th>
+                        <th>Doctor</th>
+                        <th>Motiv</th>
+
+                        <th>
+                            <a th:href="@{/admin/appointments(page=${currentPage}, sortBy='status', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
+                                Status
+                                <span th:if="${sortBy == 'status'}"
+                                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
+                            </a>
+                        </th>
+
+                        <th>Fișă medicală</th>
+                        <th>Acțiuni</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr th:if="${appointmentPage == null or appointmentPage.content.isEmpty()}">
+                        <td colspan="8">Nu există programări.</td>
+                    </tr>
+
+                    <tr th:each="appointment : ${appointmentPage.content}">
+                        <td th:text="${appointment.id}">1</td>
+
+                        <td th:text="${#temporals.format(appointment.appointmentDate, 'yyyy-MM-dd HH:mm')}">
+                            2026-05-25 10:00
+                        </td>
+
+                        <td th:text="${appointment.patient.firstName + ' ' + appointment.patient.lastName}">
+                            Pacient
+                        </td>
+
+                        <td th:text="${appointment.doctor.firstName + ' ' + appointment.doctor.lastName}">
+                            Doctor
+                        </td>
+
+                        <td th:text="${appointment.reason != null and !appointment.reason.isBlank() ? appointment.reason : '-'}">
+                            Motiv
+                        </td>
+
+                        <td>
+                            <span th:class="'status status-' + ${#strings.toLowerCase(appointment.status.name())}"
+                                  th:text="${appointment.status}">
+                                SCHEDULED
+                            </span>
+                        </td>
+
+                        <td>
+                            <a th:if="${recordsByAppointmentId.containsKey(appointment.id)}"
+                               class="record-link"
+                               th:href="@{/admin/medical-records/{id}(id=${recordsByAppointmentId.get(appointment.id).id})}">
+                                Fișa #
+                                <span th:text="${recordsByAppointmentId.get(appointment.id).id}">1</span>
+                            </a>
+
+                            <span th:if="${!recordsByAppointmentId.containsKey(appointment.id)}" class="muted-text">
+                                -
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="action-group">
+
+                                <a th:if="${appointment.status.name() == 'SCHEDULED'}"
+                                   class="action-link success"
+                                   th:href="@{/admin/appointments/accept/{id}(id=${appointment.id})}"
+                                   onclick="return confirm('Sigur accepți această programare?')">
+                                    Acceptă
+                                </a>
+
+                                <a th:if="${appointment.status.name() == 'SCHEDULED'}"
+                                   class="action-link danger"
+                                   th:href="@{/admin/appointments/reject/{id}(id=${appointment.id})}"
+                                   onclick="return confirm('Sigur refuzi această programare?')">
+                                    Refuză
+                                </a>
+
+                                <a th:if="${appointment.status.name() == 'SCHEDULED' or appointment.status.name() == 'ACCEPTED'}"
+                                   class="action-link"
+                                   th:href="@{/admin/appointments/edit/{id}(id=${appointment.id})}">
+                                    Editează
+                                </a>
+
+                                <a th:if="${appointment.status.name() == 'ACCEPTED'}"
+                                   class="action-link success"
+                                   th:href="@{/admin/appointments/complete/{id}(id=${appointment.id})}"
+                                   onclick="return confirm('Sigur marchezi această programare ca finalizată?')">
+                                    Finalizează
+                                </a>
+
+                                <a th:if="${appointment.status.name() == 'SCHEDULED' or appointment.status.name() == 'ACCEPTED'}"
+                                   class="action-link warning"
+                                   th:href="@{/admin/appointments/cancel/{id}(id=${appointment.id})}"
+                                   onclick="return confirm('Sigur vrei să anulezi această programare?')">
+                                    Anulează
+                                </a>
+
+                                <a class="action-link danger"
+                                   th:href="@{/admin/appointments/delete/{id}(id=${appointment.id})}"
+                                   onclick="return confirm('Sigur vrei să ștergi definitiv această programare?')">
+                                    Șterge
+                                </a>
+
+                                <span th:if="${appointment.status.name() == 'COMPLETED' or appointment.status.name() == 'CANCELLED' or appointment.status.name() == 'REJECTED'}"
+                                      class="muted-text">
+                                    -
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination"
+                 th:if="${appointmentPage != null and appointmentPage.totalPages > 1}">
+
+                <span th:text="'Pagina ' + (${currentPage} + 1) + ' din ' + ${appointmentPage.totalPages}">
+                    Pagina 1 din 2
+                </span>
+
+                <a th:if="${appointmentPage.hasPrevious()}"
+                   th:href="@{/admin/appointments(page=${currentPage - 1}, sortBy=${sortBy}, direction=${direction})}">
+                    Înapoi
+                </a>
+
+                <a th:if="${appointmentPage.hasNext()}"
+                   th:href="@{/admin/appointments(page=${currentPage + 1}, sortBy=${sortBy}, direction=${direction})}">
+                    Înainte
+                </a>
+            </div>
+        </section>
+
+        <div class="footer-space"></div>
+    </main>
 </div>
-
-<form th:action="@{/logout}" method="post">
-    <button type="submit">Logout</button>
-</form>
 
 </body>
 </html>

@@ -1,9 +1,6 @@
 package com.example.clinic.service;
 
-import com.example.clinic.entity.Doctor;
-import com.example.clinic.entity.MedicalRecord;
-import com.example.clinic.entity.Patient;
-import com.example.clinic.exception.DuplicateResourceException;
+import com.example.clinic.entity.*;
 import com.example.clinic.exception.ResourceNotFoundException;
 import com.example.clinic.repository.MedicalRecordRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,8 +9,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -23,72 +24,101 @@ public class MedicalRecordService {
     private final MedicalRecordRepository medicalRecordRepository;
 
     public MedicalRecord createMedicalRecord(MedicalRecord medicalRecord) {
-        log.info("Creating medical record for patient id: {}",
-                medicalRecord.getPatient() != null ? medicalRecord.getPatient().getId() : null);
+        log.info("Creating medical record");
+
+        if (medicalRecord.getAppointment() != null
+                && medicalRecordRepository.existsByAppointment(medicalRecord.getAppointment())) {
+            throw new IllegalArgumentException("Această programare are deja o fișă medicală.");
+        }
 
         if (medicalRecord.getRecordDate() == null) {
             medicalRecord.setRecordDate(LocalDate.now());
         }
 
-        if (medicalRecord.getAppointment() != null
-                && medicalRecord.getAppointment().getMedicalRecord() != null) {
-            throw new DuplicateResourceException("Această programare are deja o fișă medicală.");
-        }
+        calculateTotalServicesPrice(medicalRecord);
 
         return medicalRecordRepository.save(medicalRecord);
     }
 
     public List<MedicalRecord> getAllMedicalRecords() {
-        log.info("Fetching all medical records");
         return medicalRecordRepository.findAll();
     }
 
     public Page<MedicalRecord> getAllMedicalRecords(Pageable pageable) {
-        log.info("Fetching medical records with pagination");
         return medicalRecordRepository.findAll(pageable);
     }
 
     public MedicalRecord getMedicalRecordById(Long id) {
-        log.info("Fetching medical record with id: {}", id);
-
         return medicalRecordRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Medical record not found with id: {}", id);
-                    return new ResourceNotFoundException("Fișa medicală nu a fost găsită cu id-ul: " + id);
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Fișa medicală nu a fost găsită cu id-ul: " + id));
     }
 
     public List<MedicalRecord> getMedicalRecordsByPatient(Patient patient) {
-        log.info("Fetching medical records for patient id: {}", patient.getId());
         return medicalRecordRepository.findByPatient(patient);
     }
 
     public List<MedicalRecord> getMedicalRecordsByDoctor(Doctor doctor) {
-        log.info("Fetching medical records for doctor id: {}", doctor.getId());
         return medicalRecordRepository.findByDoctor(doctor);
     }
 
+    public Optional<MedicalRecord> getMedicalRecordByAppointment(Appointment appointment) {
+        return medicalRecordRepository.findByAppointment(appointment);
+    }
+
+    public boolean existsByAppointment(Appointment appointment) {
+        return medicalRecordRepository.existsByAppointment(appointment);
+    }
+
     public MedicalRecord updateMedicalRecord(Long id, MedicalRecord updatedMedicalRecord) {
-        log.info("Updating medical record with id: {}", id);
+        MedicalRecord existingRecord = getMedicalRecordById(id);
 
-        MedicalRecord existingMedicalRecord = getMedicalRecordById(id);
+        if (updatedMedicalRecord.getAppointment() != null) {
+            Optional<MedicalRecord> recordForAppointment =
+                    medicalRecordRepository.findByAppointment(updatedMedicalRecord.getAppointment());
 
-        existingMedicalRecord.setRecordDate(updatedMedicalRecord.getRecordDate());
-        existingMedicalRecord.setDiagnosis(updatedMedicalRecord.getDiagnosis());
-        existingMedicalRecord.setPrescription(updatedMedicalRecord.getPrescription());
-        existingMedicalRecord.setNotes(updatedMedicalRecord.getNotes());
-        existingMedicalRecord.setPatient(updatedMedicalRecord.getPatient());
-        existingMedicalRecord.setDoctor(updatedMedicalRecord.getDoctor());
-        existingMedicalRecord.setAppointment(updatedMedicalRecord.getAppointment());
-        existingMedicalRecord.setRecommendedTreatments(updatedMedicalRecord.getRecommendedTreatments());
+            if (recordForAppointment.isPresent()
+                    && !recordForAppointment.get().getId().equals(existingRecord.getId())) {
+                throw new IllegalArgumentException("Această programare are deja o fișă medicală.");
+            }
+        }
 
-        return medicalRecordRepository.save(existingMedicalRecord);
+        existingRecord.setRecordDate(updatedMedicalRecord.getRecordDate());
+        existingRecord.setPatient(updatedMedicalRecord.getPatient());
+        existingRecord.setDoctor(updatedMedicalRecord.getDoctor());
+        existingRecord.setAppointment(updatedMedicalRecord.getAppointment());
+        existingRecord.setDiagnosis(updatedMedicalRecord.getDiagnosis());
+        existingRecord.setPrescription(updatedMedicalRecord.getPrescription());
+        existingRecord.setNotes(updatedMedicalRecord.getNotes());
+
+        if (updatedMedicalRecord.getRecommendedTreatments() != null) {
+            existingRecord.setRecommendedTreatments(updatedMedicalRecord.getRecommendedTreatments());
+        } else {
+            existingRecord.setRecommendedTreatments(new HashSet<>());
+        }
+
+        calculateTotalServicesPrice(existingRecord);
+
+        return medicalRecordRepository.save(existingRecord);
     }
 
     public void deleteMedicalRecord(Long id) {
-        log.info("Deleting medical record with id: {}", id);
+        MedicalRecord record = getMedicalRecordById(id);
+        medicalRecordRepository.delete(record);
+    }
 
-        MedicalRecord medicalRecord = getMedicalRecordById(id);
-        medicalRecordRepository.delete(medicalRecord);
+    private void calculateTotalServicesPrice(MedicalRecord medicalRecord) {
+        BigDecimal total = BigDecimal.ZERO;
+
+        Set<Treatment> treatments = medicalRecord.getRecommendedTreatments();
+
+        if (treatments != null) {
+            for (Treatment treatment : treatments) {
+                if (treatment.getPrice() != null) {
+                    total = total.add(treatment.getPrice());
+                }
+            }
+        }
+
+        medicalRecord.setTotalServicesPrice(total);
     }
 }

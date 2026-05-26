@@ -2,7 +2,6 @@ package com.example.clinic.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -23,8 +22,6 @@ public class MedicalRecord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull(message = "Data fișei medicale este obligatorie")
-    @Column(nullable = false)
     private LocalDate recordDate;
 
     @NotBlank(message = "Diagnosticul este obligatoriu")
@@ -34,21 +31,23 @@ public class MedicalRecord {
     @Column(length = 1000)
     private String prescription;
 
-    @Column(length = 1000)
+    @Column(length = 1500)
     private String notes;
 
-    @NotNull(message = "Pacientul este obligatoriu")
+    @Column(precision = 10, scale = 2)
+    private BigDecimal totalServicesPrice = BigDecimal.ZERO;
+
+    @OneToOne
+    @JoinColumn(name = "appointment_id", unique = true)
+    private Appointment appointment;
+
     @ManyToOne
-    @JoinColumn(name = "patient_id", nullable = false)
+    @JoinColumn(name = "patient_id")
     private Patient patient;
 
     @ManyToOne
     @JoinColumn(name = "doctor_id")
     private Doctor doctor;
-
-    @OneToOne
-    @JoinColumn(name = "appointment_id", unique = true)
-    private Appointment appointment;
 
     @ManyToMany
     @JoinTable(
@@ -58,15 +57,21 @@ public class MedicalRecord {
     )
     private Set<Treatment> recommendedTreatments = new HashSet<>();
 
-    @Transient
-    public BigDecimal getTotalServicesPrice() {
-        if (recommendedTreatments == null || recommendedTreatments.isEmpty()) {
-            return BigDecimal.ZERO;
+    @PrePersist
+    public void prePersist() {
+        if (recordDate == null) {
+            recordDate = LocalDate.now();
         }
 
-        return recommendedTreatments.stream()
-                .map(Treatment::getPrice)
-                .filter(price -> price != null)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (totalServicesPrice == null) {
+            totalServicesPrice = BigDecimal.ZERO;
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        if (totalServicesPrice == null) {
+            totalServicesPrice = BigDecimal.ZERO;
+        }
     }
 }

@@ -2,45 +2,147 @@
 <html lang="ro" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard - MediSchedule</title>
+    <title>Dashboard Medical Test</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 
-<h1>Dashboard MediSchedule</h1>
+<div class="page">
 
-<p>Te-ai autentificat cu succes.</p>
+    <nav class="navbar">
+        <div class="navbar-logo-center">
+            <img th:src="@{/images/logo.png}" alt="Medical Test" class="main-logo">
+        </div>
 
-<p>
-    User logat:
-    <strong th:text="${#authentication.name}">username</strong>
-</p>
+        <div class="navbar-right">
+            <span class="navbar-user" th:text="${username}">admin</span>
 
-<p>
-    Roluri:
-    <span th:text="${#authentication.authorities}">roles</span>
-</p>
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
 
-<form th:action="@{/logout}" method="post">
-    <button type="submit">Logout</button>
-</form>
-<p>
-    <a th:href="@{/admin/departments}">Gestionează departamente</a>
-	
-</p>
-<p>
-    <a th:href="@{/admin/doctors}">Gestionează doctori</a>
-</p>
-<p>
-    <a th:href="@{/admin/patients}">Gestionează pacienți</a>
-</p>
-<p>
-    <a th:href="@{/admin/treatments}">Gestionează tratamente</a>
-</p>
-<p>
-    <a th:href="@{/admin/appointments}">Gestionează programări</a>
-</p>
-<p>
-    <a th:href="@{/admin/medical-records}">Gestionează fișe medicale</a>
-</p>
+    <main class="container">
+
+        <section class="hero">
+            <h1>Dashboard Medical Test</h1>
+
+            <p>Te-ai autentificat cu succes.</p>
+
+            <p>
+                User logat:
+                <strong th:text="${username}">username</strong>
+            </p>
+
+            <span class="role-badge" th:text="${authorities}">roluri</span>
+        </section>
+
+        <section th:if="${isAdmin}">
+            <h2 class="section-title">Panou administrator</h2>
+
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-icon">🏥</div>
+                    <h3>Departamente</h3>
+                    <p>Administrează departamentele clinicii și specializările disponibile.</p>
+                    <a class="btn" th:href="@{/admin/departments}">Gestionează</a>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">👨‍⚕️</div>
+                    <h3>Doctori</h3>
+                    <p>Adaugă doctori, editează date și creează conturi pentru medici.</p>
+                    <a class="btn" th:href="@{/admin/doctors}">Gestionează</a>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🧑‍🤝‍🧑</div>
+                    <h3>Pacienți</h3>
+                    <p>Vizualizează și administrează pacienții înregistrați în clinică.</p>
+                    <a class="btn" th:href="@{/admin/patients}">Gestionează</a>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🩺</div>
+                    <h3>Servicii medicale</h3>
+                    <p>Configurează serviciile medicale, procedurile și prețurile.</p>
+                    <a class="btn" th:href="@{/admin/treatments}">Gestionează</a>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">📅</div>
+                    <h3>Programări</h3>
+                    <p>Urmărește toate programările și statusul consultațiilor.</p>
+                    <a class="btn" th:href="@{/admin/appointments}">Gestionează</a>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">📋</div>
+                    <h3>Fișe medicale</h3>
+                    <p>Accesează istoricul medical și fișele create în urma consultațiilor.</p>
+                    <a class="btn" th:href="@{/admin/medical-records}">Gestionează</a>
+                </div>
+            </div>
+        </section>
+
+        <section th:if="${isPatient}">
+            <h2 class="section-title">Panou pacient</h2>
+
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-icon">📅</div>
+                    <h3>Programările mele</h3>
+                    <p>Vezi programările tale, statusul lor și anulează unde este permis.</p>
+                    <a class="btn" th:href="@{/patient/appointments}">Deschide</a>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">➕</div>
+                    <h3>Fă o programare</h3>
+                    <p>Alege doctorul, ziua și ora pentru o nouă consultație.</p>
+                    <a class="btn" th:href="@{/patient/appointments/new}">Programează-te</a>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">📋</div>
+                    <h3>Fișele mele medicale</h3>
+                    <p>Consultă diagnosticul, prescripțiile și serviciile recomandate.</p>
+                    <a class="btn" th:href="@{/patient/medical-records}">Vezi fișe</a>
+                </div>
+            </div>
+        </section>
+
+        <section th:if="${isDoctor}">
+            <h2 class="section-title">Panou doctor</h2>
+
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-icon">📅</div>
+                    <h3>Programările mele</h3>
+                    <p>Acceptă, refuză, finalizează consultații și creează fișe medicale.</p>
+                    <a class="btn" th:href="@{/doctor/appointments}">Deschide</a>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">📋</div>
+                    <h3>Fișe medicale create</h3>
+                    <p>Vezi fișele medicale create de tine pentru pacienți.</p>
+                    <a class="btn" th:href="@{/doctor/medical-records}">Vezi fișe</a>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">➕</div>
+                    <h3>Adaugă fișă medicală</h3>
+                    <p>Creează o fișă medicală pentru o consultație sau un pacient.</p>
+                    <a class="btn" th:href="@{/doctor/medical-records/new}">Adaugă</a>
+                </div>
+            </div>
+        </section>
+
+        <div class="footer-space"></div>
+    </main>
+</div>
+
 </body>
 </html>

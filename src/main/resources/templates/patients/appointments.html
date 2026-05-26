@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Programările mele - Medical Test</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="page">
+
+    <nav class="navbar">
+        <div class="navbar-logo-center">
+            <img th:src="@{/images/logo.png}" alt="Medical Test" class="main-logo">
+        </div>
+
+        <div class="navbar-right">
+            <span class="navbar-user">Pacient</span>
+
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <main class="container">
+
+        <section class="hero">
+            <h1>Programările mele</h1>
+            <p>Vezi programările tale, statusul consultațiilor și fișele medicale asociate.</p>
+            <span class="role-badge">PACIENT PANEL</span>
+        </section>
+
+        <section>
+
+            <div class="page-actions">
+                <a class="btn" th:href="@{/dashboard}">Dashboard</a>
+                <a class="btn" th:href="@{/patient/appointments/new}">Fă o programare</a>
+                <a class="btn btn-outline" th:href="@{/patient/medical-records}">Fișele mele medicale</a>
+            </div>
+
+            <div class="table-card">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Data și ora</th>
+                        <th>Doctor</th>
+                        <th>Specializare</th>
+                        <th>Motiv</th>
+                        <th>Status</th>
+                        <th>Fișă medicală</th>
+                        <th>Acțiuni</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+
+                    <tr th:if="${appointments == null or appointments.isEmpty()}">
+                        <td colspan="8">Nu ai programări înregistrate.</td>
+                    </tr>
+
+                    <tr th:each="appointment : ${appointments}">
+                        <td th:text="${appointment.id}">1</td>
+
+                        <td th:text="${#temporals.format(appointment.appointmentDate, 'yyyy-MM-dd HH:mm')}">
+                            2026-05-26 11:00
+                        </td>
+
+                        <td th:text="${appointment.doctor != null ? appointment.doctor.firstName + ' ' + appointment.doctor.lastName : 'Nespecificat'}">
+                            Doctor
+                        </td>
+
+                        <td th:text="${appointment.doctor != null ? appointment.doctor.specialization : '-'}">
+                            Cardiologie
+                        </td>
+
+                        <td th:text="${appointment.reason != null and !appointment.reason.isBlank() ? appointment.reason : '-'}">
+                            Consultație
+                        </td>
+
+                        <td>
+                            <span th:class="'status status-' + ${#strings.toLowerCase(appointment.status.name())}"
+                                  th:text="${appointment.status}">
+                                SCHEDULED
+                            </span>
+                        </td>
+
+                        <td>
+                            <a th:if="${recordsByAppointmentId != null and recordsByAppointmentId.containsKey(appointment.id)}"
+                               class="record-link"
+                               th:href="@{/patient/medical-records/{id}(id=${recordsByAppointmentId.get(appointment.id).id})}">
+                                Fișa #
+                                <span th:text="${recordsByAppointmentId.get(appointment.id).id}">1</span>
+                            </a>
+
+                            <span th:if="${recordsByAppointmentId == null or !recordsByAppointmentId.containsKey(appointment.id)}"
+                                  class="muted-text">
+                                -
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="action-group">
+
+                                <a th:if="${appointment.status.name() == 'SCHEDULED' or appointment.status.name() == 'ACCEPTED'}"
+                                   class="action-link warning"
+                                   th:href="@{/patient/appointments/cancel/{id}(id=${appointment.id})}"
+                                   onclick="return confirm('Sigur vrei să anulezi această programare?')">
+                                    Anulează
+                                </a>
+
+                                <span th:if="${appointment.status.name() == 'COMPLETED'}"
+                                      class="muted-text">
+                                    Consultație finalizată
+                                </span>
+
+                                <span th:if="${appointment.status.name() == 'CANCELLED'}"
+                                      class="muted-text">
+                                    Programare anulată
+                                </span>
+
+                                <span th:if="${appointment.status.name() == 'REJECTED'}"
+                                      class="muted-text">
+                                    Programare refuzată
+                                </span>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+        <div class="footer-space"></div>
+
+    </main>
+</div>
+
+</body>
+</html>

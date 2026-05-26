@@ -2,85 +2,150 @@
 <html lang="ro" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Servicii medicale</title>
+    <title>Servicii medicale - Medical Test</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 
-<h1>Servicii medicale</h1>
+<div class="page">
 
-<p>
-    <a th:href="@{/dashboard}">Dashboard</a> |
-    <a th:href="@{/admin/treatments/new}">Adaugă serviciu medical</a> |
-    <a th:href="@{/admin/departments}">Departamente</a> |
-    <a th:href="@{/admin/doctors}">Doctori</a> |
-    <a th:href="@{/admin/patients}">Pacienți</a> |
-    <a th:href="@{/admin/appointments}">Programări</a> |
-    <a th:href="@{/admin/medical-records}">Fișe medicale</a>
-</p>
+    <nav class="navbar">
+        <div class="navbar-logo-center">
+            <img th:src="@{/images/logo.png}" alt="Medical Test" class="main-logo">
+        </div>
 
-<table border="1" cellpadding="8">
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>
-            <a th:href="@{/admin/treatments(sortBy='name', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
-                Nume serviciu
-                <span th:if="${sortBy == 'name'}"
-                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
-            </a>
-        </th>
-        <th>Descriere</th>
-        <th>
-            <a th:href="@{/admin/treatments(sortBy='price', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
-                Preț
-                <span th:if="${sortBy == 'price'}"
-                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
-            </a>
-        </th>
-        <th>Acțiuni</th>
-    </tr>
-    </thead>
+        <div class="navbar-right">
+            <span class="navbar-user">Admin</span>
 
-    <tbody>
-    <tr th:each="treatment : ${treatmentPage.content}">
-        <td th:text="${treatment.id}">1</td>
-        <td th:text="${treatment.name}">Consultație</td>
-        <td th:text="${treatment.description}">Descriere</td>
-        <td th:text="${treatment.price}">100</td>
-        <td>
-            <a th:href="@{/admin/treatments/edit/{id}(id=${treatment.id})}">Editează</a>
-            |
-            <a th:href="@{/admin/treatments/delete/{id}(id=${treatment.id})}"
-               onclick="return confirm('Sigur vrei să ștergi acest serviciu medical?')">
-                Șterge
-            </a>
-        </td>
-    </tr>
-    </tbody>
-</table>
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
 
-<div th:if="${treatmentPage.totalPages > 1}">
-    <p>
-        <a th:if="${currentPage > 0}"
-           th:href="@{/admin/treatments(page=${currentPage - 1}, sortBy=${sortBy}, direction=${direction})}">
-            Înapoi
-        </a>
+    <main class="container">
 
-        <span>
-            Pagina <span th:text="${currentPage + 1}"></span>
-            din <span th:text="${treatmentPage.totalPages}"></span>
-        </span>
+        <section class="hero">
+            <h1>Servicii medicale</h1>
+            <p>Administrează serviciile medicale, departamentele asociate și prețurile acestora.</p>
+            <span class="role-badge">ADMIN PANEL</span>
+        </section>
 
-        <a th:if="${currentPage + 1 < treatmentPage.totalPages}"
-           th:href="@{/admin/treatments(page=${currentPage + 1}, sortBy=${sortBy}, direction=${direction})}">
-            Înainte
-        </a>
-    </p>
+        <section>
+            <div class="page-actions">
+                <a class="btn" th:href="@{/dashboard}">Dashboard</a>
+                <a class="btn" th:href="@{/admin/treatments/new}">Adaugă serviciu</a>
+                <a class="btn btn-outline" th:href="@{/admin/departments}">Departamente</a>
+                <a class="btn btn-outline" th:href="@{/admin/doctors}">Doctori</a>
+                <a class="btn btn-outline" th:href="@{/admin/appointments}">Programări</a>
+                <a class="btn btn-outline" th:href="@{/admin/medical-records}">Fișe medicale</a>
+            </div>
+
+            <div class="table-card">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+
+                        <th>
+                            <a th:href="@{/admin/treatments(page=${currentPage}, sortBy='name', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
+                                Nume serviciu
+                                <span th:if="${sortBy == 'name'}"
+                                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
+                            </a>
+                        </th>
+
+                        <th>Departament</th>
+                        <th>Descriere</th>
+
+                        <th>
+                            <a th:href="@{/admin/treatments(page=${currentPage}, sortBy='price', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
+                                Preț
+                                <span th:if="${sortBy == 'price'}"
+                                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
+                            </a>
+                        </th>
+
+                        <th>Acțiuni</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr th:if="${treatmentPage == null or treatmentPage.content.isEmpty()}">
+                        <td colspan="6">Nu există servicii medicale înregistrate.</td>
+                    </tr>
+
+                    <tr th:each="treatment : ${treatmentPage.content}">
+                        <td th:text="${treatment.id}">1</td>
+
+                        <td>
+                            <strong th:text="${treatment.name}">Consultație cardiologie</strong>
+                        </td>
+
+                        <td>
+                            <span class="status status-scheduled"
+                                  th:if="${treatment.department != null}"
+                                  th:text="${treatment.department.name}">
+                                Cardiologie
+                            </span>
+
+                            <span class="status status-cancelled"
+                                  th:if="${treatment.department == null}">
+                                Nespecificat
+                            </span>
+                        </td>
+
+                        <td th:text="${treatment.description != null and !treatment.description.isBlank() ? treatment.description : '-'}">
+                            Descriere
+                        </td>
+
+                        <td>
+                            <span class="price-badge">
+                                <strong th:text="${treatment.price}">0</strong> lei
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="action-group">
+                                <a class="action-link"
+                                   th:href="@{/admin/treatments/edit/{id}(id=${treatment.id})}">
+                                    Editează
+                                </a>
+
+                                <a class="action-link danger"
+                                   th:href="@{/admin/treatments/delete/{id}(id=${treatment.id})}"
+                                   onclick="return confirm('Sigur vrei să ștergi acest serviciu medical?')">
+                                    Șterge
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination"
+                 th:if="${treatmentPage != null and treatmentPage.totalPages > 1}">
+
+                <span th:text="'Pagina ' + (${currentPage} + 1) + ' din ' + ${treatmentPage.totalPages}">
+                    Pagina 1 din 2
+                </span>
+
+                <a th:if="${treatmentPage.hasPrevious()}"
+                   th:href="@{/admin/treatments(page=${currentPage - 1}, sortBy=${sortBy}, direction=${direction})}">
+                    Înapoi
+                </a>
+
+                <a th:if="${treatmentPage.hasNext()}"
+                   th:href="@{/admin/treatments(page=${currentPage + 1}, sortBy=${sortBy}, direction=${direction})}">
+                    Înainte
+                </a>
+            </div>
+        </section>
+
+        <div class="footer-space"></div>
+    </main>
 </div>
-
-<form th:action="@{/logout}" method="post">
-    <button type="submit">Logout</button>
-</form>
 
 </body>
 </html>

@@ -23,8 +23,7 @@ public class TreatmentService {
         log.info("Creating treatment with name: {}", treatment.getName());
 
         if (treatmentRepository.existsByName(treatment.getName())) {
-            log.error("Treatment already exists with name: {}", treatment.getName());
-            throw new DuplicateResourceException("Există deja un tratament cu numele: " + treatment.getName());
+            throw new DuplicateResourceException("Există deja un serviciu medical cu numele: " + treatment.getName());
         }
 
         return treatmentRepository.save(treatment);
@@ -44,10 +43,7 @@ public class TreatmentService {
         log.info("Fetching treatment with id: {}", id);
 
         return treatmentRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Treatment not found with id: {}", id);
-                    return new ResourceNotFoundException("Tratamentul nu a fost găsit cu id-ul: " + id);
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Serviciul medical nu a fost găsit cu id-ul: " + id));
     }
 
     public Treatment updateTreatment(Long id, Treatment updatedTreatment) {
@@ -57,13 +53,13 @@ public class TreatmentService {
 
         if (!existingTreatment.getName().equals(updatedTreatment.getName())
                 && treatmentRepository.existsByName(updatedTreatment.getName())) {
-            log.error("Treatment already exists with name: {}", updatedTreatment.getName());
-            throw new DuplicateResourceException("Există deja un tratament cu numele: " + updatedTreatment.getName());
+            throw new DuplicateResourceException("Există deja un serviciu medical cu numele: " + updatedTreatment.getName());
         }
 
         existingTreatment.setName(updatedTreatment.getName());
         existingTreatment.setDescription(updatedTreatment.getDescription());
         existingTreatment.setPrice(updatedTreatment.getPrice());
+        existingTreatment.setDepartment(updatedTreatment.getDepartment());
 
         return treatmentRepository.save(existingTreatment);
     }

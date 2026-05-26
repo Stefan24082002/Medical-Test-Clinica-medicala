@@ -60,6 +60,8 @@ public class DoctorController {
             @Valid @ModelAttribute("doctor") Doctor doctor,
             BindingResult bindingResult,
             @RequestParam(required = false) Long departmentId,
+            @RequestParam String username,
+            @RequestParam String password,
             Model model) {
 
         if (bindingResult.hasErrors()) {
@@ -68,13 +70,23 @@ public class DoctorController {
             return "doctors/form";
         }
 
-        if (departmentId != null) {
-            Department department = departmentService.getDepartmentById(departmentId);
-            doctor.setDepartment(department);
-        }
+        try {
+            if (departmentId != null) {
+                Department department = departmentService.getDepartmentById(departmentId);
+                doctor.setDepartment(department);
+            }
 
-        doctorService.createDoctor(doctor);
-        return "redirect:/admin/doctors";
+            doctorService.createDoctorWithAccount(doctor, username, password);
+
+            return "redirect:/admin/doctors";
+
+        } catch (Exception e) {
+            model.addAttribute("departments", departmentService.getAllDepartments());
+            model.addAttribute("pageTitle", "Adaugă doctor");
+            model.addAttribute("errorMessage", e.getMessage());
+
+            return "doctors/form";
+        }
     }
 
     @GetMapping("/edit/{id}")
@@ -102,13 +114,25 @@ public class DoctorController {
             return "doctors/form";
         }
 
-        if (departmentId != null) {
-            Department department = departmentService.getDepartmentById(departmentId);
-            doctor.setDepartment(department);
-        }
+        try {
+            if (departmentId != null) {
+                Department department = departmentService.getDepartmentById(departmentId);
+                doctor.setDepartment(department);
+            } else {
+                doctor.setDepartment(null);
+            }
 
-        doctorService.updateDoctor(id, doctor);
-        return "redirect:/admin/doctors";
+            doctorService.updateDoctor(id, doctor);
+
+            return "redirect:/admin/doctors";
+
+        } catch (Exception e) {
+            model.addAttribute("departments", departmentService.getAllDepartments());
+            model.addAttribute("pageTitle", "Editează doctor");
+            model.addAttribute("errorMessage", e.getMessage());
+
+            return "doctors/form";
+        }
     }
 
     @GetMapping("/delete/{id}")

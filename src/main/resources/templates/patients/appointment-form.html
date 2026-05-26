@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ro" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Fă o programare - Medical Test</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="page">
+
+    <nav class="navbar">
+        <div class="navbar-logo-center">
+            <img th:src="@{/images/logo.png}" alt="Medical Test" class="main-logo">
+        </div>
+
+        <div class="navbar-right">
+            <span class="navbar-user">Pacient</span>
+
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
+
+    <main class="container">
+
+        <section class="hero">
+            <h1>Fă o programare</h1>
+            <p>Alege doctorul, data, ora și motivul consultației. Programarea va fi trimisă către doctor pentru confirmare.</p>
+            <span class="role-badge">PACIENT PANEL</span>
+        </section>
+
+        <section>
+
+            <div class="page-actions">
+                <a class="btn" th:href="@{/dashboard}">Dashboard</a>
+                <a class="btn btn-outline" th:href="@{/patient/appointments}">Programările mele</a>
+                <a class="btn btn-outline" th:href="@{/patient/medical-records}">Fișele mele medicale</a>
+            </div>
+
+            <div class="form-card">
+
+                <div th:if="${errorMessage}" class="error-message" th:text="${errorMessage}">
+                    Eroare
+                </div>
+
+                <form th:action="@{/patient/appointments}" method="post">
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label>Doctor</label>
+                            <select name="doctorId" required>
+                                <option value="">-- Alege doctor --</option>
+
+                                <option th:each="doctor : ${doctors}"
+                                        th:value="${doctor.id}"
+                                        th:text="${doctor.firstName + ' ' + doctor.lastName + ' - ' + doctor.specialization + ' | ' + (doctor.department != null ? doctor.department.name : 'Nespecificat')}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Data consultației</label>
+                            <input type="date" name="appointmentDateInput" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Ora consultației</label>
+                            <select name="appointmentTimeInput" required>
+                                <option value="">-- Alege ora --</option>
+
+                                <option th:each="slot : ${timeSlots}"
+                                        th:value="${slot}"
+                                        th:text="${slot}">
+                                    08:00
+                                </option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+                        <label>Motivul programării</label>
+                        <textarea name="reason"
+                                  rows="5"
+                                  placeholder="Ex: consultație, control, durere, interpretare analize etc."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit">Trimite programarea</button>
+                        <a class="btn btn-outline" th:href="@{/patient/appointments}">Anulează</a>
+                    </div>
+
+                </form>
+
+            </div>
+
+        </section>
+
+        <div class="footer-space"></div>
+
+    </main>
+</div>
+
+</body>
+</html>

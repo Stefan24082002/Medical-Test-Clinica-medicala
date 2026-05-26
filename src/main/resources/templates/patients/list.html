@@ -2,84 +2,144 @@
 <html lang="ro" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Pacienți</title>
+    <title>Pacienți - Medical Test</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 
-<h1>Pacienți</h1>
+<div class="page">
 
-<p>
-    <a th:href="@{/dashboard}">Dashboard</a> |
-    <a th:href="@{/admin/patients/new}">Adaugă pacient</a> |
-    <a th:href="@{/admin/doctors}">Doctori</a> |
-    <a th:href="@{/admin/departments}">Departamente</a>
-</p>
+    <nav class="navbar">
+        <div class="navbar-logo-center">
+            <img th:src="@{/images/logo.png}" alt="Medical Test" class="main-logo">
+        </div>
 
-<table border="1" cellpadding="8">
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>
-            <a th:href="@{/admin/patients(sortBy='lastName', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
-                Nume
-            </a>
-        </th>
-        <th>Prenume</th>
-        <th>
-            <a th:href="@{/admin/patients(sortBy='birthDate', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
-                Data nașterii
-            </a>
-        </th>
-        <th>Email</th>
-        <th>Telefon</th>
-        <th>Adresă</th>
-        <th>Acțiuni</th>
-    </tr>
-    </thead>
+        <div class="navbar-right">
+            <span class="navbar-user">Admin</span>
 
-    <tbody>
-    <tr th:each="patient : ${patientPage.content}">
-        <td th:text="${patient.id}">1</td>
-        <td th:text="${patient.lastName}">Ionescu</td>
-        <td th:text="${patient.firstName}">Maria</td>
-        <td th:text="${patient.birthDate}">2000-01-01</td>
-        <td th:text="${patient.email}">maria@email.com</td>
-        <td th:text="${patient.phone}">0712345678</td>
-        <td th:text="${patient.address}">București</td>
-        <td>
-            <a th:href="@{/admin/patients/edit/{id}(id=${patient.id})}">Editează</a>
-            |
-            <a th:href="@{/admin/patients/delete/{id}(id=${patient.id})}"
-               onclick="return confirm('Sigur vrei să ștergi acest pacient?')">
-                Șterge
-            </a>
-        </td>
-    </tr>
-    </tbody>
-</table>
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
 
-<div th:if="${patientPage.totalPages > 1}">
-    <p>
-        <a th:if="${currentPage > 0}"
-           th:href="@{/admin/patients(page=${currentPage - 1}, sortBy=${sortBy}, direction=${direction})}">
-            Înapoi
-        </a>
+    <main class="container">
 
-        <span>
-            Pagina <span th:text="${currentPage + 1}"></span>
-            din <span th:text="${patientPage.totalPages}"></span>
-        </span>
+        <section class="hero">
+            <h1>Pacienți</h1>
+            <p>Administrează pacienții clinicii, datele de contact și conturile asociate.</p>
+            <span class="role-badge">ADMIN PANEL</span>
+        </section>
 
-        <a th:if="${currentPage + 1 < patientPage.totalPages}"
-           th:href="@{/admin/patients(page=${currentPage + 1}, sortBy=${sortBy}, direction=${direction})}">
-            Înainte
-        </a>
-    </p>
+        <section>
+            <div class="page-actions">
+                <a class="btn" th:href="@{/dashboard}">Dashboard</a>
+                <a class="btn" th:href="@{/admin/patients/new}">Adaugă pacient</a>
+                <a class="btn btn-outline" th:href="@{/admin/appointments}">Programări</a>
+                <a class="btn btn-outline" th:href="@{/admin/doctors}">Doctori</a>
+                <a class="btn btn-outline" th:href="@{/admin/medical-records}">Fișe medicale</a>
+            </div>
+
+            <div class="table-card">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+
+                        <th>
+                            <a th:href="@{/admin/patients(page=${currentPage}, sortBy='firstName', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
+                                Prenume
+                                <span th:if="${sortBy == 'firstName'}"
+                                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
+                            </a>
+                        </th>
+
+                        <th>
+                            <a th:href="@{/admin/patients(page=${currentPage}, sortBy='lastName', direction=${direction == 'asc' ? 'desc' : 'asc'})}">
+                                Nume
+                                <span th:if="${sortBy == 'lastName'}"
+                                      th:text="${direction == 'asc' ? '↑' : '↓'}"></span>
+                            </a>
+                        </th>
+
+                        <th>Email</th>
+                        <th>Telefon</th>
+                        <th>Cont utilizator</th>
+                        <th>Acțiuni</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr th:if="${patientPage == null or patientPage.content.isEmpty()}">
+                        <td colspan="7">Nu există pacienți înregistrați.</td>
+                    </tr>
+
+                    <tr th:each="patient : ${patientPage.content}">
+                        <td th:text="${patient.id}">1</td>
+
+                        <td th:text="${patient.firstName}">Prenume</td>
+
+                        <td th:text="${patient.lastName}">Nume</td>
+
+                        <td th:text="${patient.email != null and !patient.email.isBlank() ? patient.email : '-'}">
+                            email@test.com
+                        </td>
+
+                        <td th:text="${patient.phone != null and !patient.phone.isBlank() ? patient.phone : '-'}">
+                            0712345678
+                        </td>
+
+                        <td>
+                            <span th:if="${patient.user != null}" class="status status-accepted">
+                                Activ
+                            </span>
+
+                            <span th:if="${patient.user == null}" class="status status-cancelled">
+                                Fără cont
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="action-group">
+                                <a class="action-link"
+                                   th:href="@{/admin/patients/edit/{id}(id=${patient.id})}">
+                                    Editează
+                                </a>
+
+                                <a class="action-link danger"
+                                   th:href="@{/admin/patients/delete/{id}(id=${patient.id})}"
+                                   onclick="return confirm('Sigur vrei să ștergi acest pacient?')">
+                                    Șterge
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination"
+                 th:if="${patientPage != null and patientPage.totalPages > 1}">
+
+                <span th:text="'Pagina ' + (${currentPage} + 1) + ' din ' + ${patientPage.totalPages}">
+                    Pagina 1 din 2
+                </span>
+
+                <a th:if="${patientPage.hasPrevious()}"
+                   th:href="@{/admin/patients(page=${currentPage - 1}, sortBy=${sortBy}, direction=${direction})}">
+                    Înapoi
+                </a>
+
+                <a th:if="${patientPage.hasNext()}"
+                   th:href="@{/admin/patients(page=${currentPage + 1}, sortBy=${sortBy}, direction=${direction})}">
+                    Înainte
+                </a>
+            </div>
+        </section>
+
+        <div class="footer-space"></div>
+    </main>
 </div>
-
-<form th:action="@{/logout}" method="post">
-    <button type="submit">Logout</button>
-</form>
 
 </body>
 </html>

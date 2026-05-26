@@ -3,64 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <title th:text="${pageTitle}">Pacient</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 
-<h1 th:text="${pageTitle}">Pacient</h1>
+<div class="page">
 
-<form th:action="${patient.id == null} ? @{/admin/patients} : @{/admin/patients/edit/{id}(id=${patient.id})}"
-      th:object="${patient}"
-      method="post">
+    <nav class="navbar">
+        <div class="navbar-logo-center">
+            <img th:src="@{/images/logo.png}" alt="Medical Test" class="main-logo">
+        </div>
 
-    <div>
-        <label>Prenume:</label>
-        <input type="text" th:field="*{firstName}" required minlength="2">
-        <div th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}" style="color:red;"></div>
-    </div>
+        <div class="navbar-right">
+            <span class="navbar-user">Admin</span>
 
-    <br>
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
 
-    <div>
-        <label>Nume:</label>
-        <input type="text" th:field="*{lastName}" required minlength="2">
-        <div th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}" style="color:red;"></div>
-    </div>
+    <main class="container">
 
-    <br>
+        <section class="hero">
+            <h1 th:text="${pageTitle}">Pacient</h1>
+            <p>Completează datele pacientului și, opțional, creează cont de autentificare.</p>
+            <span class="role-badge">ADMIN PANEL</span>
+        </section>
 
-    <div>
-        <label>Data nașterii:</label>
-        <input type="date" th:field="*{birthDate}">
-    </div>
+        <section>
+            <div class="page-actions">
+                <a class="btn" th:href="@{/dashboard}">Dashboard</a>
+                <a class="btn btn-outline" th:href="@{/admin/patients}">Înapoi la pacienți</a>
+                <a class="btn btn-outline" th:href="@{/admin/appointments}">Programări</a>
+                <a class="btn btn-outline" th:href="@{/admin/doctors}">Doctori</a>
+            </div>
 
-    <br>
+            <div class="form-card">
 
-    <div>
-        <label>Email:</label>
-        <input type="email" th:field="*{email}">
-        <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}" style="color:red;"></div>
-    </div>
+                <div th:if="${errorMessage}" class="error-message" th:text="${errorMessage}">
+                    Eroare
+                </div>
 
-    <br>
+                <form th:action="${patient.id == null} ? @{/admin/patients} : @{/admin/patients/edit/{id}(id=${patient.id})}"
+                      th:object="${patient}"
+                      method="post">
 
-    <div>
-        <label>Telefon:</label>
-        <input type="text" th:field="*{phone}" placeholder="0712345678">
-        <div th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}" style="color:red;"></div>
-    </div>
+                    <h2>Date pacient</h2>
 
-    <br>
+                    <div class="form-grid">
 
-    <div>
-        <label>Adresă:</label>
-        <input type="text" th:field="*{address}">
-    </div>
+                        <div class="form-group">
+                            <label>Prenume</label>
+                            <input type="text" th:field="*{firstName}" placeholder="Prenume pacient" required>
+                            <div th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}" class="field-error"></div>
+                        </div>
 
-    <br>
+                        <div class="form-group">
+                            <label>Nume</label>
+                            <input type="text" th:field="*{lastName}" placeholder="Nume pacient" required>
+                            <div th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}" class="field-error"></div>
+                        </div>
 
-    <button type="submit">Salvează</button>
-    <a th:href="@{/admin/patients}">Anulează</a>
-</form>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" th:field="*{email}" placeholder="pacient@email.com">
+                            <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="field-error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Telefon</label>
+                            <input type="text" th:field="*{phone}" placeholder="0712345678">
+                            <div th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}" class="field-error"></div>
+                        </div>
+
+                    </div>
+
+                    <div th:if="${patient.id == null}">
+                        <h2 style="margin-top: 26px;">Cont pacient</h2>
+
+                        <p class="muted-text">
+                            Completează username și parolă doar dacă vrei să creezi și cont de autentificare pentru pacient.
+                        </p>
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label>Username cont pacient</label>
+                                <input type="text"
+                                       name="username"
+                                       placeholder="Ex: pacient.ionescu">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Parolă cont pacient</label>
+                                <input type="password"
+                                       name="password"
+                                       placeholder="Parolă pentru autentificare">
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit">Salvează</button>
+                        <a class="btn btn-outline" th:href="@{/admin/patients}">Anulează</a>
+                    </div>
+
+                </form>
+            </div>
+        </section>
+
+        <div class="footer-space"></div>
+    </main>
+</div>
 
 </body>
 </html>

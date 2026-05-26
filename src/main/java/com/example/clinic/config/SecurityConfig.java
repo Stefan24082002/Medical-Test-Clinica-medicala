@@ -24,14 +24,14 @@ public class SecurityConfig {
         http
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/images/**").permitAll()
+                		.requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/images/**").permitAll()
+                		.requestMatchers("/h2-console/**").permitAll()
+                		.requestMatchers("/admin/**").hasRole("ADMIN")
+                		.requestMatchers("/doctor/**").hasRole("DOCTOR")
+                		.requestMatchers("/patient/**").hasRole("PATIENT")
+                		.anyRequest().authenticated()
 
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/doctor/**").hasRole("DOCTOR")
-                        .requestMatchers("/patient/**").hasRole("PATIENT")
-
-                        .anyRequest().authenticated()
+                        
                 )
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers("/h2-console/**")

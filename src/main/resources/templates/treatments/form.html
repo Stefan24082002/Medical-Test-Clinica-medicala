@@ -3,47 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <title th:text="${pageTitle}">Serviciu medical</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 
-<h1 th:text="${pageTitle}">Serviciu medical</h1>
+<div class="page">
 
-<p>
-    <a th:href="@{/dashboard}">Dashboard</a> |
-    <a th:href="@{/admin/treatments}">Înapoi la servicii medicale</a>
-</p>
+    <nav class="navbar">
+        <div class="navbar-logo-center">
+            <img th:src="@{/images/logo.png}" alt="Medical Test" class="main-logo">
+        </div>
 
-<form th:action="${treatment.id == null} ? @{/admin/treatments} : @{/admin/treatments/edit/{id}(id=${treatment.id})}"
-      th:object="${treatment}"
-      method="post">
+        <div class="navbar-right">
+            <span class="navbar-user">Admin</span>
 
-    <div>
-        <label>Nume serviciu medical:</label>
-        <input type="text" th:field="*{name}" required minlength="2">
-        <div th:if="${#fields.hasErrors('name')}" th:errors="*{name}" style="color:red;"></div>
-    </div>
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
+    </nav>
 
-    <br>
+    <main class="container">
 
-    <div>
-        <label>Descriere:</label>
-        <textarea th:field="*{description}" rows="4" cols="40"></textarea>
-        <div th:if="${#fields.hasErrors('description')}" th:errors="*{description}" style="color:red;"></div>
-    </div>
+        <section class="hero">
+            <h1 th:text="${pageTitle}">Serviciu medical</h1>
+            <p>Completează informațiile serviciului medical, departamentul și prețul.</p>
+            <span class="role-badge">ADMIN PANEL</span>
+        </section>
 
-    <br>
+        <section>
+            <div class="page-actions">
+                <a class="btn" th:href="@{/dashboard}">Dashboard</a>
+                <a class="btn btn-outline" th:href="@{/admin/treatments}">Înapoi la servicii</a>
+                <a class="btn btn-outline" th:href="@{/admin/departments}">Departamente</a>
+                <a class="btn btn-outline" th:href="@{/admin/doctors}">Doctori</a>
+                <a class="btn btn-outline" th:href="@{/admin/medical-records}">Fișe medicale</a>
+            </div>
 
-    <div>
-        <label>Preț:</label>
-        <input type="number" th:field="*{price}" min="0" step="0.01" required>
-        <div th:if="${#fields.hasErrors('price')}" th:errors="*{price}" style="color:red;"></div>
-    </div>
+            <div class="form-card">
 
-    <br>
+                <div th:if="${errorMessage}" class="error-message" th:text="${errorMessage}">
+                    Eroare
+                </div>
 
-    <button type="submit">Salvează</button>
-    <a th:href="@{/admin/treatments}">Anulează</a>
-</form>
+                <form th:action="${treatment.id == null} ? @{/admin/treatments} : @{/admin/treatments/edit/{id}(id=${treatment.id})}"
+                      th:object="${treatment}"
+                      method="post">
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label>Nume serviciu medical</label>
+                            <input type="text"
+                                   th:field="*{name}"
+                                   placeholder="Ex: Consultație cardiologie"
+                                   required>
+                            <div th:if="${#fields.hasErrors('name')}" th:errors="*{name}" class="field-error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Departament</label>
+                            <select name="departmentId" required>
+                                <option value="">-- Alege departament --</option>
+
+                                <option th:each="department : ${departments}"
+                                        th:value="${department.id}"
+                                        th:text="${department.name}"
+                                        th:selected="${treatment.department != null and treatment.department.id == department.id}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Preț</label>
+                            <input type="number"
+                                   th:field="*{price}"
+                                   placeholder="Ex: 250"
+                                   min="0"
+                                   step="0.01"
+                                   required>
+                            <div th:if="${#fields.hasErrors('price')}" th:errors="*{price}" class="field-error"></div>
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+                        <label>Descriere</label>
+                        <textarea th:field="*{description}"
+                                  rows="5"
+                                  placeholder="Descriere scurtă a serviciului medical"></textarea>
+                        <div th:if="${#fields.hasErrors('description')}" th:errors="*{description}" class="field-error"></div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit">Salvează</button>
+                        <a class="btn btn-outline" th:href="@{/admin/treatments}">Anulează</a>
+                    </div>
+
+                </form>
+            </div>
+        </section>
+
+        <div class="footer-space"></div>
+    </main>
+</div>
 
 </body>
 </html>

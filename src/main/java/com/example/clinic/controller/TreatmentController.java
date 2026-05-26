@@ -1,6 +1,8 @@
 package com.example.clinic.controller;
 
+import com.example.clinic.entity.Department;
 import com.example.clinic.entity.Treatment;
+import com.example.clinic.service.DepartmentService;
 import com.example.clinic.service.TreatmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class TreatmentController {
 
     private final TreatmentService treatmentService;
+    private final DepartmentService departmentService;
 
     @GetMapping
     public String listTreatments(
@@ -46,7 +49,9 @@ public class TreatmentController {
     @GetMapping("/new")
     public String showCreateForm(Model model) {
         model.addAttribute("treatment", new Treatment());
+        model.addAttribute("departments", departmentService.getAllDepartments());
         model.addAttribute("pageTitle", "Adaugă serviciu medical");
+
         return "treatments/form";
     }
 
@@ -54,15 +59,32 @@ public class TreatmentController {
     public String createTreatment(
             @Valid @ModelAttribute("treatment") Treatment treatment,
             BindingResult bindingResult,
+            @RequestParam(required = false) Long departmentId,
             Model model) {
 
         if (bindingResult.hasErrors()) {
+            model.addAttribute("departments", departmentService.getAllDepartments());
             model.addAttribute("pageTitle", "Adaugă serviciu medical");
             return "treatments/form";
         }
 
-        treatmentService.createTreatment(treatment);
-        return "redirect:/admin/treatments";
+        try {
+            if (departmentId != null) {
+                Department department = departmentService.getDepartmentById(departmentId);
+                treatment.setDepartment(department);
+            }
+
+            treatmentService.createTreatment(treatment);
+
+            return "redirect:/admin/treatments";
+
+        } catch (Exception e) {
+            model.addAttribute("departments", departmentService.getAllDepartments());
+            model.addAttribute("pageTitle", "Adaugă serviciu medical");
+            model.addAttribute("errorMessage", e.getMessage());
+
+            return "treatments/form";
+        }
     }
 
     @GetMapping("/edit/{id}")
@@ -70,6 +92,7 @@ public class TreatmentController {
         Treatment treatment = treatmentService.getTreatmentById(id);
 
         model.addAttribute("treatment", treatment);
+        model.addAttribute("departments", departmentService.getAllDepartments());
         model.addAttribute("pageTitle", "Editează serviciu medical");
 
         return "treatments/form";
@@ -80,20 +103,40 @@ public class TreatmentController {
             @PathVariable Long id,
             @Valid @ModelAttribute("treatment") Treatment treatment,
             BindingResult bindingResult,
+            @RequestParam(required = false) Long departmentId,
             Model model) {
 
         if (bindingResult.hasErrors()) {
+            model.addAttribute("departments", departmentService.getAllDepartments());
             model.addAttribute("pageTitle", "Editează serviciu medical");
             return "treatments/form";
         }
 
-        treatmentService.updateTreatment(id, treatment);
-        return "redirect:/admin/treatments";
+        try {
+            if (departmentId != null) {
+                Department department = departmentService.getDepartmentById(departmentId);
+                treatment.setDepartment(department);
+            } else {
+                treatment.setDepartment(null);
+            }
+
+            treatmentService.updateTreatment(id, treatment);
+
+            return "redirect:/admin/treatments";
+
+        } catch (Exception e) {
+            model.addAttribute("departments", departmentService.getAllDepartments());
+            model.addAttribute("pageTitle", "Editează serviciu medical");
+            model.addAttribute("errorMessage", e.getMessage());
+
+            return "treatments/form";
+        }
     }
 
     @GetMapping("/delete/{id}")
     public String deleteTreatment(@PathVariable Long id) {
         treatmentService.deleteTreatment(id);
+
         return "redirect:/admin/treatments";
     }
 }

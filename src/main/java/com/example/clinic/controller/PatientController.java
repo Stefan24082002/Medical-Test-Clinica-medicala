@@ -1,7 +1,9 @@
 package com.example.clinic.controller;
 
 import com.example.clinic.entity.Patient;
+import com.example.clinic.entity.User;
 import com.example.clinic.service.PatientService;
+import com.example.clinic.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class PatientController {
 
     private final PatientService patientService;
+    private final UserService userService;
 
     @GetMapping
     public String listPatients(
@@ -47,6 +50,7 @@ public class PatientController {
     public String showCreateForm(Model model) {
         model.addAttribute("patient", new Patient());
         model.addAttribute("pageTitle", "Adaugă pacient");
+
         return "patients/form";
     }
 
@@ -54,6 +58,8 @@ public class PatientController {
     public String createPatient(
             @Valid @ModelAttribute("patient") Patient patient,
             BindingResult bindingResult,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String password,
             Model model) {
 
         if (bindingResult.hasErrors()) {
@@ -61,8 +67,36 @@ public class PatientController {
             return "patients/form";
         }
 
-        patientService.createPatient(patient);
-        return "redirect:/admin/patients";
+        try {
+            boolean usernameCompleted = username != null && !username.isBlank();
+            boolean passwordCompleted = password != null && !password.isBlank();
+
+            if (usernameCompleted || passwordCompleted) {
+                if (!usernameCompleted || !passwordCompleted) {
+                    model.addAttribute("pageTitle", "Adaugă pacient");
+                    model.addAttribute("errorMessage", "Pentru cont pacient trebuie completate atât username-ul, cât și parola.");
+                    return "patients/form";
+                }
+
+                User user = new User();
+                user.setUsername(username);
+                user.setPassword(password);
+                user.setEmail(patient.getEmail());
+
+                User savedUser = userService.createUser(user);
+                patient.setUser(savedUser);
+            }
+
+            patientService.createPatient(patient);
+
+            return "redirect:/admin/patients";
+
+        } catch (Exception e) {
+            model.addAttribute("pageTitle", "Adaugă pacient");
+            model.addAttribute("errorMessage", e.getMessage());
+
+            return "patients/form";
+        }
     }
 
     @GetMapping("/edit/{id}")
@@ -87,13 +121,23 @@ public class PatientController {
             return "patients/form";
         }
 
-        patientService.updatePatient(id, patient);
-        return "redirect:/admin/patients";
+        try {
+            patientService.updatePatient(id, patient);
+
+            return "redirect:/admin/patients";
+
+        } catch (Exception e) {
+            model.addAttribute("pageTitle", "Editează pacient");
+            model.addAttribute("errorMessage", e.getMessage());
+
+            return "patients/form";
+        }
     }
 
     @GetMapping("/delete/{id}")
     public String deletePatient(@PathVariable Long id) {
         patientService.deletePatient(id);
+
         return "redirect:/admin/patients";
     }
 }

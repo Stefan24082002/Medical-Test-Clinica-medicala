@@ -1,8 +1,8 @@
 package com.example.clinic.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -20,21 +20,11 @@ public class Appointment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Future(message = "Data programării trebuie să fie în viitor")
     @NotNull(message = "Data programării este obligatorie")
-    @Column(nullable = false)
+    @Column(name = "appointment_date", nullable = false)
     private LocalDateTime appointmentDate;
 
-    @NotNull(message = "Pacientul este obligatoriu")
-    @ManyToOne
-    @JoinColumn(name = "patient_id", nullable = false)
-    private Patient patient;
-
-    @NotNull(message = "Doctorul este obligatoriu")
-    @ManyToOne
-    @JoinColumn(name = "doctor_id", nullable = false)
-    private Doctor doctor;
-
+    @Size(max = 500, message = "Motivul nu poate depăși 500 de caractere")
     @Column(length = 500)
     private String reason;
 
@@ -42,6 +32,11 @@ public class Appointment {
     @Column(nullable = false)
     private AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
-    @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL)
-    private MedicalRecord medicalRecord;
+    @ManyToOne
+    @JoinColumn(name = "doctor_id", nullable = false)
+    private Doctor doctor;
+
+    @ManyToOne
+    @JoinColumn(name = "patient_id", nullable = false)
+    private Patient patient;
 }
