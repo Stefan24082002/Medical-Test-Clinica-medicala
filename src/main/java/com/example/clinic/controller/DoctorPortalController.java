@@ -65,13 +65,14 @@ public class DoctorPortalController {
         Doctor doctor = getLoggedDoctor(principal);
         Appointment appointment = appointmentService.getAppointmentById(id);
 
-        if (!appointment.getDoctor().getId().equals(doctor.getId())) {
+        if (appointment.getDoctor() == null || !appointment.getDoctor().getId().equals(doctor.getId())) {
             return "redirect:/doctor/appointments";
         }
 
-        if (appointment.getStatus() == AppointmentStatus.SCHEDULED) {
-            appointment.setStatus(AppointmentStatus.ACCEPTED);
-            appointmentService.updateAppointment(id, appointment);
+        try {
+            appointmentService.acceptAppointment(id);
+        } catch (Exception e) {
+            return "redirect:/doctor/appointments";
         }
 
         return "redirect:/doctor/appointments";
@@ -82,13 +83,14 @@ public class DoctorPortalController {
         Doctor doctor = getLoggedDoctor(principal);
         Appointment appointment = appointmentService.getAppointmentById(id);
 
-        if (!appointment.getDoctor().getId().equals(doctor.getId())) {
+        if (appointment.getDoctor() == null || !appointment.getDoctor().getId().equals(doctor.getId())) {
             return "redirect:/doctor/appointments";
         }
 
-        if (appointment.getStatus() == AppointmentStatus.SCHEDULED) {
-            appointment.setStatus(AppointmentStatus.REJECTED);
-            appointmentService.updateAppointment(id, appointment);
+        try {
+            appointmentService.rejectAppointment(id);
+        } catch (Exception e) {
+            return "redirect:/doctor/appointments";
         }
 
         return "redirect:/doctor/appointments";
@@ -99,13 +101,14 @@ public class DoctorPortalController {
         Doctor doctor = getLoggedDoctor(principal);
         Appointment appointment = appointmentService.getAppointmentById(id);
 
-        if (!appointment.getDoctor().getId().equals(doctor.getId())) {
+        if (appointment.getDoctor() == null || !appointment.getDoctor().getId().equals(doctor.getId())) {
             return "redirect:/doctor/appointments";
         }
 
-        if (appointment.getStatus() == AppointmentStatus.ACCEPTED) {
-            appointment.setStatus(AppointmentStatus.COMPLETED);
-            appointmentService.updateAppointment(id, appointment);
+        try {
+            appointmentService.completeAppointment(id);
+        } catch (Exception e) {
+            return "redirect:/doctor/appointments";
         }
 
         return "redirect:/doctor/appointments";
@@ -136,7 +139,12 @@ public class DoctorPortalController {
         if (appointmentId != null) {
             Appointment appointment = appointmentService.getAppointmentById(appointmentId);
 
-            if (!appointment.getDoctor().getId().equals(doctor.getId())) {
+            if (appointment.getDoctor() == null || !appointment.getDoctor().getId().equals(doctor.getId())) {
+                return "redirect:/doctor/appointments";
+            }
+
+            if (appointment.getStatus() != AppointmentStatus.ACCEPTED
+                    && appointment.getStatus() != AppointmentStatus.COMPLETED) {
                 return "redirect:/doctor/appointments";
             }
 
@@ -226,6 +234,7 @@ public class DoctorPortalController {
 
         return "doctor/medical-record-form";
     }
+
     @PostMapping("/medical-records/edit/{id}")
     public String updateMedicalRecord(
             @PathVariable Long id,
@@ -240,7 +249,8 @@ public class DoctorPortalController {
         Doctor doctor = getLoggedDoctor(principal);
 
         if (bindingResult.hasErrors()) {
-            prepareMedicalRecordFormModel(model, doctor, "Editează fișă medicală");
+            MedicalRecord currentRecord = medicalRecordService.getMedicalRecordById(id);
+            prepareMedicalRecordEditFormModel(model, doctor, currentRecord, "Editează fișă medicală");
             return "doctor/medical-record-form";
         }
 
@@ -252,7 +262,8 @@ public class DoctorPortalController {
             return "redirect:/doctor/medical-records";
 
         } catch (Exception e) {
-            prepareMedicalRecordFormModel(model, doctor, "Editează fișă medicală");
+            MedicalRecord currentRecord = medicalRecordService.getMedicalRecordById(id);
+            prepareMedicalRecordEditFormModel(model, doctor, currentRecord, "Editează fișă medicală");
             model.addAttribute("errorMessage", e.getMessage());
 
             return "doctor/medical-record-form";
@@ -277,9 +288,14 @@ public class DoctorPortalController {
         model.addAttribute("patients", patients);
         model.addAttribute("treatments", treatments);
         model.addAttribute("pageTitle", pageTitle);
-      
     }
-    private void prepareMedicalRecordEditFormModel(Model model, Doctor doctor, MedicalRecord currentRecord, String pageTitle) {
+
+    private void prepareMedicalRecordEditFormModel(
+            Model model,
+            Doctor doctor,
+            MedicalRecord currentRecord,
+            String pageTitle) {
+
         List<Appointment> allAppointments = appointmentService.getAppointmentsByDoctor(doctor);
 
         List<Appointment> availableAppointments = allAppointments.stream()
@@ -305,6 +321,7 @@ public class DoctorPortalController {
         model.addAttribute("treatments", treatments);
         model.addAttribute("pageTitle", pageTitle);
     }
+
     private void setDoctorMedicalRecordRelations(
             MedicalRecord medicalRecord,
             Doctor doctor,
@@ -317,8 +334,13 @@ public class DoctorPortalController {
         if (appointmentId != null) {
             Appointment appointment = appointmentService.getAppointmentById(appointmentId);
 
-            if (!appointment.getDoctor().getId().equals(doctor.getId())) {
+            if (appointment.getDoctor() == null || !appointment.getDoctor().getId().equals(doctor.getId())) {
                 throw new IllegalArgumentException("Nu poți crea fișă pentru programarea altui doctor.");
+            }
+
+            if (appointment.getStatus() != AppointmentStatus.ACCEPTED
+                    && appointment.getStatus() != AppointmentStatus.COMPLETED) {
+                throw new IllegalArgumentException("Fișa medicală poate fi creată doar pentru programări acceptate sau finalizate.");
             }
 
             medicalRecord.setAppointment(appointment);

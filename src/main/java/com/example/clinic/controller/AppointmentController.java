@@ -9,7 +9,6 @@ import com.example.clinic.service.AppointmentService;
 import com.example.clinic.service.DoctorService;
 import com.example.clinic.service.MedicalRecordService;
 import com.example.clinic.service.PatientService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,10 +16,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -38,7 +41,7 @@ public class AppointmentController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
             @RequestParam(defaultValue = "appointmentDate") String sortBy,
-            @RequestParam(defaultValue = "asc") String direction,
+            @RequestParam(defaultValue = "desc") String direction,
             Model model) {
 
         Sort sort = direction.equalsIgnoreCase("desc")
@@ -50,9 +53,10 @@ public class AppointmentController {
 
         Map<Long, MedicalRecord> recordsByAppointmentId = new HashMap<>();
 
-        for (Appointment appointment : appointmentPage.getContent()) {
-            medicalRecordService.getMedicalRecordByAppointment(appointment)
-                    .ifPresent(record -> recordsByAppointmentId.put(appointment.getId(), record));
+        for (MedicalRecord record : medicalRecordService.getAllMedicalRecords()) {
+            if (record.getAppointment() != null) {
+                recordsByAppointmentId.put(record.getAppointment().getId(), record);
+            }
         }
 
         model.addAttribute("appointmentPage", appointmentPage);
@@ -67,30 +71,30 @@ public class AppointmentController {
     @GetMapping("/new")
     public String showCreateForm(Model model) {
         model.addAttribute("appointment", new Appointment());
-        prepareAppointmentForm(model, "Adaugă programare");
-
+        prepareFormModel(model, "Adaugă programare");
         return "appointments/form";
     }
 
     @PostMapping
     public String createAppointment(
-            @Valid @ModelAttribute("appointment") Appointment appointment,
-            BindingResult bindingResult,
+            @ModelAttribute("appointment") Appointment appointment,
             @RequestParam Long patientId,
             @RequestParam Long doctorId,
+            @RequestParam String appointmentDateInput,
+            @RequestParam String appointmentTimeInput,
             Model model) {
-
-        if (bindingResult.hasErrors()) {
-            prepareAppointmentForm(model, "Adaugă programare");
-            return "appointments/form";
-        }
 
         try {
             Patient patient = patientService.getPatientById(patientId);
             Doctor doctor = doctorService.getDoctorById(doctorId);
 
+            LocalDate date = LocalDate.parse(appointmentDateInput);
+            LocalTime time = LocalTime.parse(appointmentTimeInput);
+            LocalDateTime appointmentDateTime = LocalDateTime.of(date, time);
+
             appointment.setPatient(patient);
             appointment.setDoctor(doctor);
+            appointment.setAppointmentDate(appointmentDateTime);
 
             if (appointment.getStatus() == null) {
                 appointment.setStatus(AppointmentStatus.SCHEDULED);
@@ -101,10 +105,8 @@ public class AppointmentController {
             return "redirect:/admin/appointments";
 
         } catch (Exception e) {
-            model.addAttribute("appointment", appointment);
-            prepareAppointmentForm(model, "Adaugă programare");
+            prepareFormModel(model, "Adaugă programare");
             model.addAttribute("errorMessage", e.getMessage());
-
             return "appointments/form";
         }
     }
@@ -114,7 +116,13 @@ public class AppointmentController {
         Appointment appointment = appointmentService.getAppointmentById(id);
 
         model.addAttribute("appointment", appointment);
-        prepareAppointmentForm(model, "Editează programare");
+
+        if (appointment.getAppointmentDate() != null) {
+            model.addAttribute("selectedDate", appointment.getAppointmentDate().toLocalDate().toString());
+            model.addAttribute("selectedTime", appointment.getAppointmentDate().toLocalTime().toString());
+        }
+
+        prepareFormModel(model, "Editează programare");
 
         return "appointments/form";
     }
@@ -122,34 +130,39 @@ public class AppointmentController {
     @PostMapping("/edit/{id}")
     public String updateAppointment(
             @PathVariable Long id,
-            @Valid @ModelAttribute("appointment") Appointment appointment,
-            BindingResult bindingResult,
+            @ModelAttribute("appointment") Appointment appointment,
             @RequestParam Long patientId,
             @RequestParam Long doctorId,
+            @RequestParam String appointmentDateInput,
+            @RequestParam String appointmentTimeInput,
             Model model) {
-
-        if (bindingResult.hasErrors()) {
-            prepareAppointmentForm(model, "Editează programare");
-            return "appointments/form";
-        }
 
         try {
             Patient patient = patientService.getPatientById(patientId);
             Doctor doctor = doctorService.getDoctorById(doctorId);
 
+            LocalDate date = LocalDate.parse(appointmentDateInput);
+            LocalTime time = LocalTime.parse(appointmentTimeInput);
+            LocalDateTime appointmentDateTime = LocalDateTime.of(date, time);
+
             appointment.setPatient(patient);
             appointment.setDoctor(doctor);
+            appointment.setAppointmentDate(appointmentDateTime);
 
             appointmentService.updateAppointment(id, appointment);
 
             return "redirect:/admin/appointments";
 
         } catch (Exception e) {
+            prepareFormModel(model, "Editează programare");
+            model.addAttribute("errorMessage", e.getMessage());
+
             Appointment existingAppointment = appointmentService.getAppointmentById(id);
 
-            model.addAttribute("appointment", existingAppointment);
-            prepareAppointmentForm(model, "Editează programare");
-            model.addAttribute("errorMessage", e.getMessage());
+            if (existingAppointment.getAppointmentDate() != null) {
+                model.addAttribute("selectedDate", existingAppointment.getAppointmentDate().toLocalDate().toString());
+                model.addAttribute("selectedTime", existingAppointment.getAppointmentDate().toLocalTime().toString());
+            }
 
             return "appointments/form";
         }
@@ -185,10 +198,25 @@ public class AppointmentController {
         return "redirect:/admin/appointments";
     }
 
-    private void prepareAppointmentForm(Model model, String pageTitle) {
+    private void prepareFormModel(Model model, String pageTitle) {
         model.addAttribute("patients", patientService.getAllPatients());
         model.addAttribute("doctors", doctorService.getAllDoctors());
         model.addAttribute("statuses", AppointmentStatus.values());
+        model.addAttribute("timeSlots", generateTimeSlots());
         model.addAttribute("pageTitle", pageTitle);
+    }
+
+    private List<String> generateTimeSlots() {
+        List<String> timeSlots = new ArrayList<>();
+
+        LocalTime start = LocalTime.of(8, 0);
+        LocalTime end = LocalTime.of(18, 0);
+
+        while (start.isBefore(end)) {
+            timeSlots.add(start.toString());
+            start = start.plusMinutes(30);
+        }
+
+        return timeSlots;
     }
 }

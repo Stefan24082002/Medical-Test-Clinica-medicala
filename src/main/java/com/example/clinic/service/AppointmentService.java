@@ -3,10 +3,12 @@ package com.example.clinic.service;
 import com.example.clinic.entity.Appointment;
 import com.example.clinic.entity.AppointmentStatus;
 import com.example.clinic.entity.Doctor;
+import com.example.clinic.entity.MedicalRecord;
 import com.example.clinic.entity.Patient;
 import com.example.clinic.exception.AppointmentConflictException;
 import com.example.clinic.exception.ResourceNotFoundException;
 import com.example.clinic.repository.AppointmentRepository;
+import com.example.clinic.repository.MedicalRecordRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ import java.util.List;
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
+    private final MedicalRecordRepository medicalRecordRepository;
 
     public Appointment createAppointment(Appointment appointment) {
         log.info("Creating appointment");
@@ -141,6 +144,7 @@ public class AppointmentService {
 
         return appointmentRepository.save(appointment);
     }
+
     public void completeAppointment(Long id) {
         log.info("Completing appointment with id: {}", id);
 
@@ -158,6 +162,23 @@ public class AppointmentService {
         log.info("Deleting appointment with id: {}", id);
 
         Appointment appointment = getAppointmentById(id);
+
+        /*
+         * Dacă programarea are fișă medicală asociată,
+         * ștergem mai întâi fișa și relațiile ei cu serviciile.
+         */
+        medicalRecordRepository.findByAppointment(appointment).ifPresent(record -> {
+            if (record.getRecommendedTreatments() != null) {
+                record.getRecommendedTreatments().clear();
+            }
+
+            record.setAppointment(null);
+            record.setPatient(null);
+            record.setDoctor(null);
+
+            medicalRecordRepository.delete(record);
+        });
+
         appointmentRepository.delete(appointment);
     }
 
