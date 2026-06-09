@@ -1,8 +1,8 @@
-# Clinic Management System
+# Medical Test Clinic - Aplicatie de gestionare a unei clinici medicale 
 
-Clinic Management System este o aplicație web dezvoltată în Java Spring Boot pentru administrarea unei clinici medicale. Aplicația permite gestionarea doctorilor, pacienților, departamentelor, serviciilor medicale, programărilor și fișelor medicale.
+Medical Test Clinic este o aplicație web dezvoltată în Java Spring Boot pentru administrarea unei clinici medicale. Aplicația permite gestionarea doctorilor, pacienților, departamentelor, serviciilor medicale, programărilor și fișelor medicale.
 
-Proiectul este structurat pe roluri: administrator, doctor și pacient. Fiecare rol are acces doar la funcționalitățile specifice.
+Proiectul este structurat pe 3  roluri: administrator, doctor și pacient. Fiecare rol are acces doar la funcționalitățile sale .
 
 ---
 
@@ -76,7 +76,7 @@ Aplicația conține următoarele entități principale:
 - Department
 - Appointment
 - MedicalRecord
-- Treatment
+- Treatment(reprezinta serviciile oferite de clinica)
 
 ---
 
@@ -98,16 +98,15 @@ O regulă importantă implementată este că **o programare poate avea o singur�
 ---
 
 ## Diagrama ER
-
 ```mermaid
 erDiagram
 
     USERS {
         Long id PK
-        String username
-        String password
         String email
         Boolean enabled
+        String password
+        String username
     }
 
     ROLES {
@@ -122,64 +121,38 @@ erDiagram
 
     PATIENTS {
         Long id PK
-        String first_name
-        String last_name
-        String email
-        String phone
         String address
         Date birth_date
+        String email
+        String first_name
+        String last_name
+        String phone
         Long user_id FK
     }
 
     DOCTORS {
         Long id PK
+        String email
         String first_name
         String last_name
-        String specialization
-        String email
         String phone
+        String specialization
         Long department_id FK
         Long user_id FK
     }
 
     DEPARTMENTS {
         Long id PK
-        String name
         String description
-    }
-
-    APPOINTMENTS {
-        Long id PK
-        DateTime appointment_date
-        String reason
-        String status
-        Long patient_id FK
-        Long doctor_id FK
-    }
-
-    MEDICAL_RECORDS {
-        Long id PK
-        Date record_date
-        String diagnosis
-        String prescription
-        String notes
-        Decimal total_services_price
-        Long appointment_id FK
-        Long patient_id FK
-        Long doctor_id FK
+        String name
     }
 
     TREATMENTS {
         Long id PK
-        String name
         String description
+        String name
         Decimal price
         Long department_id FK
-    }
-
-    MEDICAL_RECORD_TREATMENTS {
-        Long medical_record_id FK
-        Long treatment_id FK
     }
 
     DOCTOR_TREATMENTS {
@@ -187,25 +160,53 @@ erDiagram
         Long treatment_id FK
     }
 
+    APPOINTMENTS {
+        Long id PK
+        DateTime appointment_date
+        String reason
+        String status
+        Long doctor_id FK
+        Long patient_id FK
+    }
+
+    MEDICAL_RECORDS {
+        Long id PK
+        String diagnosis
+        String notes
+        String prescription
+        Date record_date
+        Decimal total_services_price
+        Long appointment_id FK
+        Long doctor_id FK
+        Long patient_id FK
+    }
+
+    MEDICAL_RECORD_TREATMENTS {
+        Long medical_record_id FK
+        Long treatment_id FK
+    }
+
     USERS ||--o| PATIENTS : "are cont pacient"
     USERS ||--o| DOCTORS : "are cont doctor"
-    USERS }o--o{ ROLES : "are roluri"
+    USERS ||--o{ USERS_ROLES : "are"
+    ROLES ||--o{ USERS_ROLES : "este atribuit"
 
     DEPARTMENTS ||--o{ DOCTORS : "are doctori"
     DEPARTMENTS ||--o{ TREATMENTS : "are servicii"
 
+    DOCTORS ||--o{ APPOINTMENTS : "primeste"
     PATIENTS ||--o{ APPOINTMENTS : "face"
-    DOCTORS ||--o{ APPOINTMENTS : "primește"
 
-    APPOINTMENTS ||--o| MEDICAL_RECORDS : "generează"
+    APPOINTMENTS ||--o| MEDICAL_RECORDS : "genereaza"
+    DOCTORS ||--o{ MEDICAL_RECORDS : "creeaza"
     PATIENTS ||--o{ MEDICAL_RECORDS : "are"
-    DOCTORS ||--o{ MEDICAL_RECORDS : "creează"
 
-    MEDICAL_RECORDS }o--o{ TREATMENTS : "recomandă"
-    DOCTORS }o--o{ TREATMENTS : "poate efectua"
+    DOCTORS ||--o{ DOCTOR_TREATMENTS : "poate efectua"
+    TREATMENTS ||--o{ DOCTOR_TREATMENTS : "este efectuat"
+
+    MEDICAL_RECORDS ||--o{ MEDICAL_RECORD_TREATMENTS : "contine"
+    TREATMENTS ||--o{ MEDICAL_RECORD_TREATMENTS : "este recomandat"
 ```
-
----
 
 ## Funcționalități principale
 
@@ -329,7 +330,7 @@ Aplicația include paginare și sortare pentru listele principale:
 - programări;
 - fișe medicale.
 
-Paginarea și sortarea sunt realizate folosind `Pageable`, `PageRequest` și `Sort` din Spring Data JPA.
+Paginarea și sortarea sunt facute folosind `Pageable`, `PageRequest` și `Sort` din Spring Data JPA.
 
 ---
 
@@ -398,7 +399,7 @@ Testele care folosesc profilul `test` nu afectează baza de date reală PostgreS
 
 ## Testare
 
-Au fost realizate teste unitare pentru stratul de service folosind JUnit 5 și Mockito.
+Au fost realizate teste unitare pentru service  folosind JUnit 5 și Mockito.
 
 Clase de test:
 
@@ -533,7 +534,7 @@ src/main/java/com/example/clinic
 
 ---
 
-## Reguli de business implementate
+## Reguli implementate
 
 - Un doctor nu poate avea două programări la aceeași dată și oră.
 - Programările nu pot fi create în trecut.
@@ -549,9 +550,3 @@ src/main/java/com/example/clinic
 - Doctorul vede doar programările și fișele proprii.
 
 ---
-
-## Concluzie
-
-Aplicația implementează un sistem complet de management pentru o clinică medicală, cu autentificare pe roluri, CRUD pentru entități principale, programări, fișe medicale, servicii medicale, validări, paginare, sortare, logging, multi-environment și teste unitare.
-
-Proiectul respectă arhitectura pe straturi și folosește tehnologii moderne din ecosistemul Spring Boot.
